@@ -6,6 +6,8 @@ import { playFanfare } from "@/lib/fanfare";
 import {
   calibrate,
   createState,
+  drinkSignals,
+  logDrink,
   moodLabel,
   RULES,
   tick,
@@ -160,11 +162,37 @@ function PlantApp() {
     }
   }, []);
 
+  const [quietUntil, setQuietUntil] = useState<number | null>(null);
+  const quietRef = useRef<number | null>(null);
+  quietRef.current = quietUntil;
+  useEffect(() => {
+    if (!quietUntil) return;
+    const id = window.setTimeout(() => setQuietUntil(null), Math.max(0, quietUntil - Date.now()));
+    return () => window.clearTimeout(id);
+  }, [quietUntil]);
+
+  function goQuiet(minutes: number | null) {
+    if (minutes === null) return setQuietUntil(null);
+    setQuietUntil(Date.now() + minutes * 60_000);
+    audioRef.current?.pause();
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    setSpeaking(false);
+  }
+
   const react = useCallback(
     async (events: PlantEvent[]) => {
       if (!events.length) return;
       const ev = events.find((x) => x.kind === "drink") ?? events[events.length - 1];
       if (!ev) return;
+      // quiet time: keep counting, say nothing
+      if (quietRef.current && Date.now() < quietRef.current) {
+        if (ev.kind === "drink") {
+          setLeaf("perk");
+          setPulse((p) => p + 1);
+          setBubble({ line: "Sip counted.", delivery: "whisper", leaf: "perk", kind: "drink" });
+        }
+        return;
+      }
       // a drink always gets its comment, even if another line is mid-flight
       if (busy.current && ev.kind !== "drink") return;
       busy.current = true;
@@ -274,13 +302,25 @@ function PlantApp() {
     const at = Date.now();
     if (kind === "away") demoRef.current = { at, faceVisible: false, pitch: 0, frameY: 0, eyeDist: 0, mouthGap: 0 };
     else if (kind === "slouch")
-      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 0.5, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap };
+      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 1.5, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap };
     else if (kind === "drink") {
-      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 1.15, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap + 0.45 };
+      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 0.6, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap + 0.25 };
       // one press is one sip: the mouth closes again shortly after
       window.setTimeout(() => demo("upright"), 1200);
     } else demoRef.current = { at, faceVisible: true, ...b };
   }
+
+  function drankByHand() {
+    const out = logDrink(stateRef.current, Date.now());
+    commit(out.state);
+    if (out.events.length) void react(out.events);
+    else setVoiceNote("Already counted a sip in the last 20 seconds.");
+  }
+
+  const sip =
+    mode === "camera" && readingRef.current && baseRef.current
+      ? drinkSignals(readingRef.current, baseRef.current)
+      : { chinUp: false, mouthOpen: false, chinWayUp: false };
 
   async function askGerald() {
     const frame = captureFrame?.();
@@ -346,7 +386,7 @@ function PlantApp() {
 
           <div className="mt-2 rounded-2xl border border-primary/30 bg-primary/5 p-4">
             <p className="text-xs uppercase tracking-widest text-primary">
-              {bubble ? bubble.kind === "drink" ? "celebrating" : bubble.kind === "back" ? "noticing you" : "nagging" : "waiting"}
+              {quietUntil ? "quiet time" : bubble ? bubble.kind === "drink" ? "celebrating" : bubble.kind === "back" ? "noticing you" : "nagging" : "waiting"}
             </p>
             <p className="mt-2 min-h-[3.5rem] font-display text-xl italic leading-snug">
               {bubble?.line ??
@@ -412,6 +452,18 @@ function PlantApp() {
                 ) : (
                   <span className="text-sm text-primary">Posture baseline saved.</span>
                 )}
+                {quietUntil ? (
+                  <button onClick={() => goQuiet(null)} className="rounded-xl border border-primary px-4 py-2 text-sm text-primary">
+                    Quiet until {new Date(quietUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} — let Gerald talk again
+                  </button>
+                ) : (
+                  <button onClick={() => goQuiet(30)} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
+                    Quiet for 30 minutes
+                  </button>
+                )}
+                <button onClick={drankByHand} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
+                  I just drank water
+                </button>
                 <button onClick={askGerald} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
                   What does my posture look like right now?
                 </button>
@@ -433,6 +485,15 @@ function PlantApp() {
                     {k === "upright" ? "sit up" : k === "away" ? "walk away" : k}
                   </button>
                 ))}
+                {quietUntil ? (
+                  <button onClick={() => goQuiet(null)} className="rounded-full border border-primary px-4 py-1.5 text-sm text-primary">
+                    Quiet until {new Date(quietUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} — let Gerald talk again
+                  </button>
+                ) : (
+                  <button onClick={() => goQuiet(30)} className="rounded-full border border-border px-4 py-1.5 text-sm hover:border-primary">
+                    Quiet for 30 minutes
+                  </button>
+                )}
                 <button
                   onClick={() => setDemoSpeed((s) => (s === 1 ? 10 : 1))}
                   className="ml-auto rounded-full border border-border px-3 py-1 text-xs hover:border-primary"
@@ -443,6 +504,15 @@ function PlantApp() {
                   Stop
                 </button>
               </div>
+            )}
+
+            {mode === "camera" && baseline && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Sip detector: chin up{" "}
+                <span className={sip.chinUp ? "text-primary" : ""}>{sip.chinUp ? "yes" : "no"}</span> · mouth open{" "}
+                <span className={sip.mouthOpen ? "text-primary" : ""}>{sip.mouthOpen ? "yes" : "no"}</span>
+                {" "}— tip your head back like you are drinking and hold it for a second.
+              </p>
             )}
 
             {error && <p className="mt-3 text-sm text-destructive">{error}</p>}

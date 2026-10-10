@@ -6,7 +6,7 @@
 - [x] Plant visual that withers, droops and blooms + theatrical notifications
 - [x] Test the state-machine rules (2-minute slouch, drink detection, nags) — 14 tests green
 - [x] Verify end-to-end in the browser (demo mode: drink cheers, slouch nags, chart fills)
-- [ ] ElevenLabs spoken sighs and gospel cheers — blocked: the "Codered" key needs the text_to_speech permission ticked in elevenlabs.io → API Keys
+- [x] ElevenLabs spoken sighs and gospel cheers — key permissions ticked, voice live
 - [ ] Backboard memory of past sessions — blocked: needs the user's Backboard API key
 - [ ] Tiger Data streak history — blocked: needs Lovable Cloud enabled
 - [ ] Custom domain for the app — the user declined the purchase today; fernforgivemenot.live is still free to take ($3.34 first year, $31.25 a year after)
@@ -14,3 +14,6 @@
 - [ ] Copy the code into the team repo github.com/ShubhangiPurohit-dev/Sigh-cus — blocked: KeertiUmadi has no write access there; needs Shubhangi to add KeertiUmadi as a collaborator with Write, then re-run /tmp/browser/push-gh/gh_push.py
 - [x] Hand the user a zip of the project files — saved as guilt-trip-plant.zip in Files
 - [x] Publish the app so anyone with a link can open it — publishing scheduled for https://tune-cataloger-buddy.lovable.app (public visibility)
+
+- [x] Snooze: pause Gerald's comments for a while (keep counting)
+- [x] Fix sip detection (chin-up sign was inverted) + manual "I just drank water" button
