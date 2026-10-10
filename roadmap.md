@@ -13,3 +13,4 @@
 - [x] Code is on GitHub at github.com/KeertiUmadi/Sigh-cus — 86 project files plus a README, pushed through the linked GitHub connection
 - [ ] Copy the code into the team repo github.com/ShubhangiPurohit-dev/Sigh-cus — blocked: KeertiUmadi has no write access there; needs Shubhangi to add KeertiUmadi as a collaborator with Write, then re-run /tmp/browser/push-gh/gh_push.py
 - [x] Hand the user a zip of the project files — saved as guilt-trip-plant.zip in Files
+- [ ] Publish the app so anyone with a link can open it — the project is not published yet
