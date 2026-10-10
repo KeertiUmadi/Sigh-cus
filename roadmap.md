@@ -1,10 +1,11 @@
 # Guilt-Trip Plant — build roadmap
 
-- [ ] Webcam posture + water detection (MediaPipe face landmarks, graceful fallback)
-- [ ] Guilt line writing via Gemini (server function, key stays server-side)
-- [ ] ElevenLabs spoken sighs and gospel cheers (needs connection)
-- [ ] Backboard memory of past sessions (needs API key)
-- [ ] Guilt-streak chart
-- [ ] Plant visual that withers, droops and blooms + theatrical notifications
-- [ ] Test the state-machine rules (2-minute slouch, drink detection, nags)
-- [ ] Verify end-to-end in the browser
+- [x] Webcam posture + water detection (MediaPipe face landmarks, graceful fallback)
+- [x] Guilt line writing via Gemini (server function, key stays server-side)
+- [x] Guilt-streak chart (mood trail with drink and slouch markers)
+- [x] Plant visual that withers, droops and blooms + theatrical notifications
+- [x] Test the state-machine rules (2-minute slouch, drink detection, nags) — 14 tests green
+- [x] Verify end-to-end in the browser (demo mode: drink cheers, slouch nags, chart fills)
+- [ ] ElevenLabs spoken sighs and gospel cheers — blocked: the "Codered" key needs the text_to_speech permission ticked in elevenlabs.io → API Keys
+- [ ] Backboard memory of past sessions — blocked: needs the user's Backboard API key
+- [ ] Tiger Data streak history — blocked: needs Lovable Cloud enabled
