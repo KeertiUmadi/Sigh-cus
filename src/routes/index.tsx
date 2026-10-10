@@ -4,6 +4,7 @@ import { Plant } from "@/components/Plant";
 import { StreakChart } from "@/components/StreakChart";
 import { playFanfare } from "@/lib/fanfare";
 import {
+  calibrate,
   createState,
   moodLabel,
   RULES,
@@ -232,14 +233,12 @@ function PlantApp() {
   function calibrateNow() {
     calibSamples.current = [];
     collecting.current = true;
+    setVoiceNote("Hold your best posture for a few seconds…");
     window.setTimeout(() => {
       collecting.current = false;
       try {
-        const samples = calibSamples.current.slice(-12);
-        const b = samples.length >= 3 ? (samples.length ? JSON.parse(JSON.stringify(samples)) : []) : [];
-        void b;
-        const base = require_calibrate(samples);
-        setBaseline(base);
+        setBaseline(calibrate(calibSamples.current.slice(-12)));
+        setVoiceNote(null);
       } catch (e) {
         setVoiceNote((e as Error).message);
       }
