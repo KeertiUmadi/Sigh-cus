@@ -127,8 +127,8 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
       // the angles depend on the video's aspect ratio.
       const W = v.videoWidth || 640;
       const H = v.videoHeight || 480;
-      const px = (i: number) => face[i].x * W;
-      const py = (i: number) => face[i].y * H;
+      const px = (i: number) => (face[i]?.x ?? 0) * W;
+      const py = (i: number) => (face[i]?.y ?? 0) * H;
 
       const eyeMidY = (py(33) + py(133)) / 2;
       const eyeMidX = (px(33) + px(133)) / 2;
