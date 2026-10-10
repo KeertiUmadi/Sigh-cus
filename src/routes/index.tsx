@@ -162,9 +162,11 @@ function PlantApp() {
 
   const react = useCallback(
     async (events: PlantEvent[]) => {
-      if (!events.length || busy.current) return;
-      const ev = events[events.length - 1];
+      if (!events.length) return;
+      const ev = events.find((x) => x.kind === "drink") ?? events[events.length - 1];
       if (!ev) return;
+      // a drink always gets its comment, even if another line is mid-flight
+      if (busy.current && ev.kind !== "drink") return;
       busy.current = true;
       const s = stateRef.current;
       try {
@@ -190,8 +192,15 @@ function PlantApp() {
         if ("Notification" in window && Notification.permission === "granted") {
           new Notification("Your plant is suffering", { body: out.line });
         }
+        busy.current = false;
         await speak(out.line, out.delivery);
       } catch (e) {
+        if (ev.kind === "drink") {
+          const line = "Wow. Hydrated. Truly, a historic achievement for someone of your caliber.";
+          setBubble({ line, delivery: "scold", leaf: "perk", kind: "drink" });
+          setLog((l) => [{ at: ev.at, kind: ev.kind, line }, ...l].slice(0, 12));
+          playFanfare();
+        }
         setVoiceNote((e as Error).message || "The plant could not find words.");
       } finally {
         busy.current = false;
