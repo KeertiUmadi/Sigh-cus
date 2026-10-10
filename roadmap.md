@@ -9,3 +9,4 @@
 - [ ] ElevenLabs spoken sighs and gospel cheers — blocked: the "Codered" key needs the text_to_speech permission ticked in elevenlabs.io → API Keys
 - [ ] Backboard memory of past sessions — blocked: needs the user's Backboard API key
 - [ ] Tiger Data streak history — blocked: needs Lovable Cloud enabled
+- [ ] Custom domain for the app — the user declined the purchase today; fernforgivemenot.live is still free to take ($3.34 first year, $31.25 a year after)
