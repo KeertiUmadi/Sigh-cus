@@ -185,11 +185,13 @@ be grudgingly impressed, not nice. Reply with JSON only.`,
     };
   });
 
+// Daniel: dry, British, human. Deadpan = fairly stable, modest style, slightly slow.
+const DANIEL = "onwK4e9ZLuTAKqWW03F9";
 const VOICES: Record<string, { id: string; stability: number; style: number; speed: number }> = {
-  sigh: { id: "bAq8AI9QURijOtmeFFqT", stability: 0.35, style: 0.65, speed: 0.92 },
-  scold: { id: "bAq8AI9QURijOtmeFFqT", stability: 0.3, style: 0.8, speed: 1.0 },
-  gospel: { id: "bAq8AI9QURijOtmeFFqT", stability: 0.4, style: 0.7, speed: 1.0 },
-  whisper: { id: "bAq8AI9QURijOtmeFFqT", stability: 0.5, style: 0.5, speed: 0.88 },
+  sigh: { id: DANIEL, stability: 0.45, style: 0.35, speed: 0.9 },
+  scold: { id: DANIEL, stability: 0.4, style: 0.45, speed: 0.97 },
+  gospel: { id: DANIEL, stability: 0.35, style: 0.55, speed: 1.0 },
+  whisper: { id: DANIEL, stability: 0.5, style: 0.3, speed: 0.88 },
 };
 
 const voiceSchema = z.object({
@@ -228,7 +230,7 @@ export const plantVoice = createServerFn({ method: "POST" })
         },
         body: JSON.stringify({
           text: data.text,
-          model_id: "eleven_turbo_v2_5",
+          model_id: "eleven_multilingual_v2",
           voice_settings: {
             stability: voice.stability,
             similarity_boost: 0.75,
