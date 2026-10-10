@@ -1,0 +1,147 @@
+import { describe, expect, it } from "vitest";
+import {
+  RULES,
+  calibrate,
+  createState,
+  isDrink,
+  isSlouch,
+  tick,
+  type PlantEvent,
+  type PlantState,
+  type Reading,
+} from "@/lib/plant-core";
+
+/** A calibrated "sitting properly" face, and the readings the plant reacts to. */
+const upright: Reading = {
+  at: 0,
+  faceVisible: true,
+  pitch: 0.8,
+  frameY: 0.35,
+  eyeDist: 0.18,
+  mouthGap: 0.12,
+};
+
+const baseline = calibrate([upright]);
+const slouching: Reading = { ...upright, pitch: 0.5 };
+const drinking: Reading = { ...upright, pitch: 0.9, mouthGap: 0.52 };
+const gone: Reading = {
+  ...upright,
+  faceVisible: false,
+  pitch: 0,
+  frameY: 0,
+  eyeDist: 0,
+  mouthGap: 0,
+};
+
+function advance(
+  state: PlantState,
+  reading: Reading,
+  count: number,
+  dt = 1000,
+): { state: PlantState; events: PlantEvent[] } {
+  let s = state;
+  const events: PlantEvent[] = [];
+  for (let i = 0; i < count; i++) {
+    const out = tick(s, { ...reading, at: s.startedAt + (i + 1) * dt }, dt, baseline);
+    s = out.state;
+    events.push(...out.events);
+  }
+  return { state: s, events };
+}
+
+describe("posture and drink detection", () => {
+  it("counts a dropped head as a slouch but not good posture", () => {
+    expect(isSlouch(slouching, baseline)).toBe(true);
+    expect(isSlouch(upright, baseline)).toBe(false);
+    expect(isSlouch(gone, baseline)).toBe(false);
+  });
+
+  it("counts an open mouth with a lifted chin as a drink", () => {
+    expect(isDrink(drinking, baseline)).toBe(true);
+    expect(isDrink(upright, baseline)).toBe(false);
+    // a wide-open mouth without the chin lift (a yawn) is not a drink
+    expect(isDrink({ ...upright, mouthGap: 0.6 }, baseline)).toBe(false);
+  });
+
+  it("refuses to calibrate when no face is in frame", () => {
+    expect(() => calibrate([gone])).toThrow(/No face found/);
+  });
+});
+
+describe("the two minute slouch rule", () => {
+  it("says nothing while the slouch is under two minutes", () => {
+    const { state, events } = advance(createState(0), slouching, RULES.slouchMs / 1000 - 1);
+    expect(events).toEqual([]);
+    expect(state.slouchMs).toBe(RULES.slouchMs - 1000);
+  });
+
+  it("sighs and wilts the moment the slouch passes two minutes", () => {
+    const { state, events } = advance(createState(0), slouching, RULES.slouchMs / 1000);
+    expect(events.map((e) => e.kind)).toEqual(["slouch"]);
+    expect(state.slouchCount).toBe(1);
+    expect(state.mood).toBe(RULES.moodStart - RULES.slouchHit);
+  });
+
+  it("keeps nagging while you stay slouched, but not more than once a cooldown", () => {
+    const under = advance(createState(0), slouching, (RULES.slouchMs + RULES.nagCooldownMs - 1000) / 1000);
+    expect(under.events.map((e) => e.kind)).toEqual(["slouch"]);
+
+    const over = advance(createState(0), slouching, (RULES.slouchMs + RULES.nagCooldownMs) / 1000);
+    expect(over.events.map((e) => e.kind)).toEqual(["slouch", "slouch"]);
+  });
+});
+
+describe("drinking water", () => {
+  it("celebrates a drink held long enough and wipes the slouch timer", () => {
+    const warmed = advance(createState(0), slouching, 60);
+    expect(warmed.state.slouchMs).toBe(60_000);
+
+    const { state, events } = advance(warmed.state, drinking, 2, 500);
+    expect(events.map((e) => e.kind)).toEqual(["drink"]);
+    expect(state.drinkCount).toBe(1);
+    expect(state.drinkStreak).toBe(1);
+    expect(state.slouchMs).toBe(0);
+    expect(state.dryMs).toBe(0);
+  });
+
+  it("is not fooled by a single open-mouthed frame", () => {
+    const { state, events } = advance(createState(0), drinking, 1, 300);
+    expect(events).toEqual([]);
+    expect(state.drinkCount).toBe(0);
+    expect(state.drinkHoldMs).toBe(300);
+  });
+
+  it("tops the mood out at one hundred", () => {
+    const { state } = advance(createState(0), drinking, 12);
+    expect(state.mood).toBe(RULES.moodMax);
+  });
+});
+
+describe("thirst, screen time and abandonment", () => {
+  it("nags once you have gone forty five minutes without water", () => {
+    const { state, events } = advance(createState(0), upright, RULES.thirstMs / 1000);
+    expect(events.map((e) => e.kind)).toContain("thirst");
+    expect(state.dryMs).toBe(RULES.thirstMs);
+  });
+
+  it("nags about your eyes after an hour on screen", () => {
+    const { events } = advance(createState(0), upright, RULES.screenMs / 1000);
+    expect(events.map((e) => e.kind)).toContain("screen");
+  });
+
+  it("mourns you after twenty seconds out of frame and stops counting the slouch", () => {
+    const { state, events } = advance(createState(0), gone, RULES.awayMs / 1000);
+    expect(events.map((e) => e.kind)).toEqual(["away"]);
+    expect(state.mood).toBe(RULES.moodStart - RULES.awayHit);
+    expect(state.slouchMs).toBe(0);
+  });
+
+  it("resets a good streak when it catches you slouching", () => {
+    const drank = advance(createState(0), drinking, 3, 1000);
+    expect(drank.state.drinkStreak).toBe(3);
+
+    const after = advance(drank.state, slouching, RULES.slouchMs / 1000);
+    expect(after.state.slouchCount).toBe(1);
+    expect(after.state.drinkStreak).toBe(0);
+  });
+});

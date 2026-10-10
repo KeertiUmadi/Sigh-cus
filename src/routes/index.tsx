@@ -1,225 +1,455 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import { remixObject, type RemixResult } from "@/lib/remix.functions";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Plant } from "@/components/Plant";
+import { StreakChart } from "@/components/StreakChart";
+import { playFanfare } from "@/lib/fanfare";
+import {
+  createState,
+  moodLabel,
+  RULES,
+  tick,
+  type Baseline,
+  type PlantEvent,
+  type PlantState,
+  type Reading,
+} from "@/lib/plant-core";
+import { judgePosture, plantLine, plantVoice } from "@/lib/plant.functions";
+import { useFaceSensor } from "@/lib/use-face-sensor";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Reality Remix — turn any object into an experience" },
+      { title: "Guilt-Trip Plant — the desk plant that judges your posture" },
       {
         name: "description",
         content:
-          "Snap a photo of any object and get a narrated story, a surprising fact and an eco quest to reuse it.",
+          "A melodramatic office plant that watches your posture, hydration and screen time through your webcam, then sighs, wilts and sends theatrical guilt notifications.",
       },
-      { property: "og:title", content: "Reality Remix — turn any object into an experience" },
+      { property: "og:title", content: "Guilt-Trip Plant — the desk plant that judges your posture" },
       {
         property: "og:description",
-        content: "Snap any object. Get a narrated adventure, a fun fact and an eco quest.",
+        content:
+          "Slouch for two minutes and your desk plant audibly despairs. Drink water and it throws a gospel choir.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Index,
+  component: PlantApp,
 });
 
-const STYLES = ["Fantasy", "Sci-Fi", "Noir", "Cozy"] as const;
+const STORE_KEY = "guilt-trip-plant/v1";
 
-function resize(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const max = 1024;
-      const scale = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement("canvas");
-      c.width = Math.round(img.width * scale);
-      c.height = Math.round(img.height * scale);
-      c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
-      resolve(c.toDataURL("image/jpeg", 0.85));
-    };
-    img.onerror = () => reject(new Error("Could not read that image."));
-    img.src = url;
-  });
+/** Used when running without a camera, so the demo never depends on hardware. */
+const SYNTH_BASELINE: Baseline = { pitch: 0.8, frameY: 0.35, eyeDist: 0.18, mouthGap: 0.12 };
+
+type Mode = "off" | "camera" | "demo";
+
+type Bubble = {
+  line: string;
+  delivery: string;
+  leaf: string;
+  kind: PlantEvent["kind"];
+};
+
+function restore(): PlantState {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return createState(Date.now());
+    const parsed = JSON.parse(raw) as PlantState;
+    if (typeof parsed?.mood !== "number" || !Array.isArray(parsed?.trail)) {
+      return createState(Date.now());
+    }
+    return parsed;
+  } catch {
+    return createState(Date.now());
+  }
 }
 
-function Index() {
-  const [image, setImage] = useState<string | null>(null);
-  const [style, setStyle] = useState<(typeof STYLES)[number]>("Fantasy");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<RemixResult | null>(null);
-  const [playing, setPlaying] = useState<number | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+function PlantApp() {
+  const [state, setState] = useState<PlantState>(() => createState(Date.now()));
+  const stateRef = useRef(state);
+  const [baseline, setBaseline] = useState<Baseline | null>(null);
+  const [mode, setMode] = useState<Mode>("off");
+  const [bubble, setBubble] = useState<Bubble | null>(null);
+  const [speaking, setSpeaking] = useState(false);
+  const [pulse, setPulse] = useState(0);
+  const [leaf, setLeaf] = useState<"wither" | "perk" | "droop">("perk");
+  const [voiceNote, setVoiceNote] = useState<string | null>(null);
+  const [judging, setJudging] = useState<string | null>(null);
+  const [log, setLog] = useState<{ at: number; kind: string; line: string }[]>([]);
+  const [demoSpeed, setDemoSpeed] = useState(1);
 
-  async function onFile(f: File | undefined) {
-    if (!f) return;
-    setError(null);
-    setResult(null);
-    try {
-      setImage(await resize(f));
-    } catch (e) {
-      setError((e as Error).message);
+  const readingRef = useRef<Reading | null>(null);
+  const demoRef = useRef<Reading>({ ...SYNTH_BASELINE, at: Date.now(), faceVisible: true });
+  const calibSamples = useRef<Reading[]>([]);
+  const collecting = useRef(false);
+  const recentLines = useRef<string[]>([]);
+  const busy = useRef(false);
+  const modeRef = useRef<Mode>("off");
+  const speedRef = useRef(1);
+  const baseRef = useRef<Baseline | null>(null);
+  const lastAt = useRef(0);
+
+  modeRef.current = mode;
+  speedRef.current = demoSpeed;
+  baseRef.current = baseline;
+
+  const onReading = useCallback((r: Reading) => {
+    readingRef.current = r;
+    if (collecting.current && r.faceVisible) {
+      calibSamples.current.push(r);
     }
+  }, []);
+
+  const sensor = useFaceSensor(onReading);
+  const { videoRef, start, stop, status, error, captureFrame } = sensor;
+
+  // hydrate persisted state
+  useEffect(() => {
+    const s = restore();
+    stateRef.current = s;
+    setState(s);
+  }, []);
+
+  const commit = useCallback((next: PlantState) => {
+    stateRef.current = next;
+    setState(next);
+  }, []);
+
+  const speak = useCallback(async (text: string, delivery: string) => {
+    setSpeaking(true);
+    try {
+      const { audio } = await plantVoice({
+        data: { text, delivery: delivery as "sigh" | "scold" | "gospel" | "whisper" },
+      });
+      const el = new Audio(`data:audio/mpeg;base64,${audio}`);
+      el.onended = () => setSpeaking(false);
+      await el.play();
+    } catch (e) {
+      setVoiceNote(
+        "The spoken voice is unavailable, so the plant is using the browser's voice instead. " +
+          "Give the ElevenLabs key the text_to_speech permission for the real thing.",
+      );
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = delivery === "whisper" ? 0.82 : 0.95;
+        u.pitch = delivery === "gospel" ? 1.2 : 0.85;
+        u.onend = () => setSpeaking(false);
+        window.speechSynthesis.speak(u);
+      } else {
+        setSpeaking(false);
+      }
+      void e;
+    }
+  }, []);
+
+  const react = useCallback(
+    async (events: PlantEvent[]) => {
+      if (!events.length || busy.current) return;
+      const ev = events[events.length - 1];
+      busy.current = true;
+      const s = stateRef.current;
+      try {
+        const out = await plantLine({
+          data: {
+            kind: ev.kind,
+            mood: s.mood,
+            slouchSeconds: s.slouchMs / 1000,
+            dryMinutes: s.dryMs / 60000,
+            screenMinutes: s.screenMs / 60000,
+            drinks: s.drinkCount,
+            streak: s.drinkStreak,
+            recentLines: recentLines.current,
+          },
+        });
+        const nextLeaf = out.leaf as "wither" | "perk" | "droop";
+        setLeaf(nextLeaf);
+        setPulse((p) => p + 1);
+        setBubble({ line: out.line, delivery: out.delivery, leaf: out.leaf, kind: ev.kind });
+        recentLines.current = [out.line, ...recentLines.current].slice(0, 5);
+        setLog((l) => [{ at: ev.at, kind: ev.kind, line: out.line }, ...l].slice(0, 12));
+        if (ev.kind === "drink") playFanfare();
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("Your plant is suffering", { body: out.line });
+        }
+        await speak(out.line, out.delivery);
+      } catch (e) {
+        setVoiceNote((e as Error).message || "The plant could not find words.");
+      } finally {
+        busy.current = false;
+      }
+    },
+    [speak],
+  );
+
+  // the watching loop
+  useEffect(() => {
+    if (mode === "off") return;
+    lastAt.current = Date.now();
+    const id = window.setInterval(() => {
+      const base = baseRef.current ?? SYNTH_BASELINE;
+      const now = Date.now();
+      const dt = Math.min(2000, now - lastAt.current) * speedRef.current;
+      lastAt.current = now;
+      const reading =
+        modeRef.current === "camera" ? readingRef.current : { ...demoRef.current, at: now };
+      if (!reading) return;
+      const out = tick(stateRef.current, reading, dt, base);
+      commit(out.state);
+      if (out.events.length) void react(out.events);
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [mode, commit, react]);
+
+  // persist
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify(stateRef.current));
+      } catch {
+        /* storage full or blocked; the plant simply forgets */
+      }
+    }, 4000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  async function beginCamera() {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => undefined);
+    }
+    await start();
+    setMode("camera");
   }
 
-  async function remix() {
-    if (!image) return;
-    setLoading(true);
-    setError(null);
-    setResult(null);
-    try {
-      setResult(await remixObject({ data: { image, style } }));
-    } catch (e) {
-      setError((e as Error).message || "Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
+  function beginDemo() {
+    demoRef.current = { ...SYNTH_BASELINE, at: Date.now(), faceVisible: true };
+    setMode("demo");
+    setDemoSpeed(10);
   }
 
-  function speak(text: string, idx: number) {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    if (playing === idx) {
-      setPlaying(null);
+  function calibrateNow() {
+    calibSamples.current = [];
+    collecting.current = true;
+    window.setTimeout(() => {
+      collecting.current = false;
+      try {
+        const samples = calibSamples.current.slice(-12);
+        const b = samples.length >= 3 ? (samples.length ? JSON.parse(JSON.stringify(samples)) : []) : [];
+        void b;
+        const base = require_calibrate(samples);
+        setBaseline(base);
+      } catch (e) {
+        setVoiceNote((e as Error).message);
+      }
+    }, 2500);
+  }
+
+  function demo(kind: "slouch" | "drink" | "away" | "upright") {
+    const b = baseRef.current ?? SYNTH_BASELINE;
+    const at = Date.now();
+    if (kind === "away") demoRef.current = { at, faceVisible: false, pitch: 0, frameY: 0, eyeDist: 0, mouthGap: 0 };
+    else if (kind === "slouch")
+      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 0.5, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap };
+    else if (kind === "drink")
+      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 1.15, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap + 0.45 };
+    else demoRef.current = { at, faceVisible: true, ...b };
+  }
+
+  async function askGerald() {
+    const frame = captureFrame?.();
+    if (!frame) {
+      setVoiceNote("Start the camera first so Gerald can get a look at you.");
       return;
     }
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 0.95;
-    u.onend = () => setPlaying(null);
-    setPlaying(idx);
-    window.speechSynthesis.speak(u);
+    setJudging("Gerald is squinting at you…");
+    try {
+      const verdict = await judgePosture({ data: { image: frame } });
+      setJudging(null);
+      setLeaf(verdict.leaf as "wither" | "perk" | "droop");
+      setPulse((p) => p + 1);
+      setBubble({ line: verdict.line, delivery: verdict.delivery, leaf: verdict.leaf, kind: "slouch" });
+      setLog((l) => [{ at: Date.now(), kind: "verdict", line: verdict.summary }, ...l].slice(0, 12));
+      await speak(verdict.line, verdict.delivery);
+    } catch (e) {
+      setJudging(null);
+      setVoiceNote((e as Error).message);
+    }
   }
 
-  function playAll() {
-    if (!result || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    setPlaying(-1);
-    result.chapters.forEach((c, i) => {
-      const u = new SpeechSynthesisUtterance(`${c.title}. ${c.narration}`);
-      u.rate = 0.95;
-      if (i === result.chapters.length - 1) u.onend = () => setPlaying(null);
-      window.speechSynthesis.speak(u);
-    });
+  function reset() {
+    const fresh = createState(Date.now());
+    stateRef.current = fresh;
+    setState(fresh);
+    setBubble(null);
+    setLog([]);
+    recentLines.current = [];
+    try {
+      localStorage.removeItem(STORE_KEY);
+    } catch {
+      /* nothing to clean */
+    }
   }
+
+  const active = mode !== "off";
+  const sessionMinutes = useMemo(
+    () => Math.floor((state.trail.length ? state.trail[state.trail.length - 1].at - state.startedAt : 0) / 60000),
+    [state],
+  );
 
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-5 py-12">
-      <header className="mb-10 text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-primary">Reality Remix</p>
-        <h1 className="mt-3 font-display text-5xl leading-tight sm:text-6xl">
-          Turn any object into an experience
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-          Snap a mug, a shoe, a plastic bottle. Get a narrated adventure, a surprising fact and an
-          eco quest to give it a second life.
+    <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-8">
+      <header className="mb-6">
+        <p className="text-xs uppercase tracking-[0.35em] text-primary">Passive-aggressive office tamagotchi</p>
+        <h1 className="mt-2 font-display text-5xl leading-none sm:text-6xl">Guilt-Trip Plant</h1>
+        <p className="mt-3 max-w-2xl text-muted-foreground">
+          A desk plant that does not track productivity. It watches your posture, your hydration and
+          your screen time, and reacts entirely through guilt and melodrama.
         </p>
       </header>
 
-      <section className="rounded-2xl border bg-card p-5">
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => onFile(e.target.files?.[0])}
-        />
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="flex h-64 w-full items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-        >
-          {image ? (
-            <img src={image} alt="Your object" className="h-full w-full object-contain" />
-          ) : (
-            <span>Tap to take or upload a photo</span>
-          )}
-        </button>
-
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="mr-1 text-sm text-muted-foreground">Style</span>
-          {STYLES.map((s) => (
-            <button
-              key={s}
-              onClick={() => setStyle(s)}
-              className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
-                style === s
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border hover:border-primary"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={remix}
-          disabled={!image || loading}
-          className="mt-5 w-full rounded-xl bg-primary py-3 font-medium text-primary-foreground transition-opacity disabled:opacity-40"
-        >
-          {loading ? "Remixing reality…" : "Remix it"}
-        </button>
-        {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
-      </section>
-
-      {result && (
-        <article className="mt-10 space-y-8">
-          <div className="text-center">
-            <h2 className="font-display text-4xl">{result.object_name}</h2>
-            <p className="mt-2 italic text-muted-foreground">{result.tagline}</p>
-            <button
-              onClick={playAll}
-              className="mt-4 rounded-full border border-primary px-5 py-2 text-sm text-primary hover:bg-primary hover:text-primary-foreground"
-            >
-              {playing === -1 ? "Playing…" : "Play the full story aloud"}
-            </button>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+        {/* the plant */}
+        <section className="rounded-3xl border bg-card p-5">
+          <div className="mx-auto h-72 w-full max-w-xs">
+            <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} />
           </div>
 
-          <div className="space-y-4">
-            {result.chapters.map((c, i) => (
-              <div key={i} className="rounded-2xl border bg-card p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-primary">
-                      Chapter {i + 1}
-                    </p>
-                    <h3 className="mt-1 font-display text-2xl">{c.title}</h3>
-                  </div>
-                  <button
-                    onClick={() => speak(`${c.title}. ${c.narration}`, i)}
-                    className="shrink-0 rounded-full border px-3 py-1 text-sm hover:border-primary"
-                  >
-                    {playing === i ? "Stop" : "Listen"}
-                  </button>
-                </div>
-                <p className="mt-3 leading-relaxed">{c.narration}</p>
-              </div>
-            ))}
+          <div className="mt-2 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+            <p className="text-xs uppercase tracking-widest text-primary">
+              {bubble ? bubble.kind === "drink" ? "celebrating" : bubble.kind === "back" ? "noticing you" : "nagging" : "waiting"}
+            </p>
+            <p className="mt-2 min-h-[3.5rem] font-display text-xl italic leading-snug">
+              {bubble?.line ??
+                (active
+                  ? "Nothing yet. Give it a moment. Or two. Or twenty."
+                  : "Start the camera and tell it where good posture looks like for you.")}
+            </p>
           </div>
 
-          <div className="rounded-2xl border bg-secondary p-6">
-            <p className="text-xs uppercase tracking-widest text-primary">Did you know</p>
-            <p className="mt-2">{result.fun_fact}</p>
-          </div>
-
-          <div className="rounded-2xl border border-primary/40 bg-card p-6">
-            <p className="text-xs uppercase tracking-widest text-primary">Eco remix</p>
-            <p className="mt-3 text-sm text-muted-foreground">Made of: {result.eco.material}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{result.eco.footprint_note}</p>
-            <ul className="mt-4 list-inside list-disc space-y-1">
-              {result.eco.reuse_ideas.map((r, i) => (
-                <li key={i}>{r}</li>
-              ))}
-            </ul>
-            <div className="mt-5 rounded-xl bg-primary/10 p-4">
-              <p className="text-xs uppercase tracking-widest text-primary">5-minute eco quest</p>
-              <p className="mt-1">{result.eco.quest}</p>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-xl bg-secondary p-3">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">mood</p>
+              <p className="mt-1 font-display text-2xl">{Math.round(state.mood)}</p>
+              <p className="text-xs text-primary">{moodLabel(state.mood)}</p>
+            </div>
+            <div className="rounded-xl bg-secondary p-3">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">drinks</p>
+              <p className="mt-1 font-display text-2xl">{state.drinkCount}</p>
+              <p className="text-xs text-primary">
+                streak {state.drinkStreak} · slouches {state.slouchCount}
+              </p>
             </div>
           </div>
-        </article>
-      )}
+        </section>
+
+        {/* controls + evidence */}
+        <section className="space-y-5">
+          <div className="rounded-3xl border bg-card p-5">
+            {!active && (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={beginCamera}
+                  disabled={status === "loading"}
+                  className="rounded-xl bg-primary px-5 py-2.5 font-medium text-primary-foreground disabled:opacity-50"
+                >
+                  {status === "loading" ? "Opening camera…" : "Start the camera"}
+                </button>
+                <button
+                  onClick={beginDemo}
+                  className="rounded-xl border border-border px-5 py-2.5 font-medium hover:border-primary"
+                >
+                  Run in demo mode
+                </button>
+              </div>
+            )}
+
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              className={`mt-4 h-40 w-full rounded-xl object-cover ${mode === "camera" ? "" : "hidden"}`}
+            />
+
+            {mode === "camera" && (
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {!baseline ? (
+                  <button
+                    onClick={calibrateNow}
+                    className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                  >
+                    I am sitting up straight — remember this
+                  </button>
+                ) : (
+                  <span className="text-sm text-primary">Posture baseline saved.</span>
+                )}
+                <button onClick={askGerald} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
+                  What does my posture look like right now?
+                </button>
+                <button onClick={stop} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-destructive">
+                  Stop
+                </button>
+              </div>
+            )}
+
+            {mode === "demo" && (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="mr-1 text-sm text-muted-foreground">Pretend that I…</span>
+                {(["slouch", "drink", "away", "upright"] as const).map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => demo(k)}
+                    className="rounded-full border border-border px-4 py-1.5 text-sm capitalize hover:border-primary"
+                  >
+                    {k === "upright" ? "sit up" : k === "away" ? "walk away" : k}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setDemoSpeed((s) => (s === 1 ? 10 : 1))}
+                  className="ml-auto rounded-full border border-border px-3 py-1 text-xs hover:border-primary"
+                >
+                  {demoSpeed === 10 ? "demo speed ×10" : "real time"}
+                </button>
+              </div>
+            )}
+
+            {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+            {judging && <p className="mt-3 text-sm text-primary">{judging}</p>}
+            {voiceNote && <p className="mt-3 text-sm text-muted-foreground">{voiceNote}</p>}
+          </div>
+
+          <div className="rounded-3xl border bg-card p-5">
+            <div className="flex items-baseline justify-between">
+              <h2 className="font-display text-2xl">Guilt streak</h2>
+              <span className="text-xs text-muted-foreground">
+                {sessionMinutes} min watched · two minutes of slouching earns a sigh
+              </span>
+            </div>
+            <div className="mt-4">
+              <StreakChart trail={state.trail} />
+            </div>
+            <button onClick={reset} className="mt-4 text-xs text-muted-foreground underline hover:text-primary">
+              Forgive me and start over
+            </button>
+          </div>
+
+          <div className="rounded-3xl border bg-card p-5">
+            <h2 className="font-display text-2xl">What it said</h2>
+            <ul className="mt-3 space-y-2 text-sm">
+              {log.length === 0 && <li className="text-muted-foreground">Nothing yet.</li>}
+              {log.map((entry, i) => (
+                <li key={i} className="flex gap-3">
+                  <span className="w-16 shrink-0 text-xs uppercase tracking-widest text-muted-foreground">
+                    {entry.kind}
+                  </span>
+                  <span className="italic">{entry.line}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
