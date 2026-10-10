@@ -165,12 +165,21 @@ export function calibrate(readings: Reading[]): Baseline {
   };
 }
 
+/**
+ * Two signals must agree (head dropped, sunk lower in frame, leaned in), or one
+ * must be extreme. A single mild signal is usually just a glance or a shift.
+ */
 export function isSlouch(r: Reading, b: Baseline) {
   if (!r.faceVisible) return false;
+  const pitchDrop = r.pitch < b.pitch * SENSITIVITY.slouchPitchRatio;
+  const sunk = r.frameY > b.frameY + SENSITIVITY.slouchFrameY;
+  const leaned = r.eyeDist > b.eyeDist * SENSITIVITY.slouchEyeRatio;
+  const hits = Number(pitchDrop) + Number(sunk) + Number(leaned);
+  if (hits >= 2) return true;
   return (
-    r.pitch < b.pitch * SENSITIVITY.slouchPitchRatio ||
-    r.frameY > b.frameY + SENSITIVITY.slouchFrameY ||
-    r.eyeDist > b.eyeDist * SENSITIVITY.slouchEyeRatio
+    r.pitch < b.pitch * (SENSITIVITY.slouchPitchRatio - 0.15) ||
+    r.frameY > b.frameY + SENSITIVITY.slouchFrameY * 2 ||
+    r.eyeDist > b.eyeDist * (SENSITIVITY.slouchEyeRatio + 0.2)
   );
 }
 

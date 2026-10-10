@@ -44,7 +44,7 @@ const CONTEXT: Record<z.infer<typeof lineSchema>["kind"], string> = {
   thirst: "The user has not had a drink for {dryMinutes} minutes. Whisper about your drying roots.",
   screen: "The user has been on screen for {screenMinutes} minutes. Scold them about their eyes.",
   away: "The user left. Whisper about abandonment and the dust settling on your leaves.",
-  drink: "The user just drank water. Celebrate like a gospel choir, but make it about you.",
+  drink: "The user just drank water after you told them to. Give a dry, deadpan backhanded compliment — praise that is really an insult (e.g. impressed they managed basic survival).",
   back: "The user came back. Whisper something passive-aggressive about how long that took.",
 };
 
