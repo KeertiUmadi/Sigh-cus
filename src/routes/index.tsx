@@ -118,6 +118,18 @@ function PlantApp() {
     setState(next);
   }, []);
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const stopAll = useCallback(() => {
+    stop();
+    setMode("off");
+    audioRef.current?.pause();
+    audioRef.current = null;
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    setSpeaking(false);
+    setVoiceNote(null);
+  }, [stop]);
+
   const speak = useCallback(async (text: string, delivery: string) => {
     setSpeaking(true);
     try {
@@ -125,6 +137,8 @@ function PlantApp() {
         data: { text, delivery: delivery as "sigh" | "scold" | "gospel" | "whisper" },
       });
       const el = new Audio(`data:audio/mpeg;base64,${audio}`);
+      audioRef.current?.pause();
+      audioRef.current = el;
       el.onended = () => setSpeaking(false);
       await el.play();
     } catch (e) {
@@ -392,7 +406,7 @@ function PlantApp() {
                 <button onClick={askGerald} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
                   What does my posture look like right now?
                 </button>
-                <button onClick={stop} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-destructive">
+                <button onClick={stopAll} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-destructive">
                   Stop
                 </button>
               </div>
@@ -415,6 +429,9 @@ function PlantApp() {
                   className="ml-auto rounded-full border border-border px-3 py-1 text-xs hover:border-primary"
                 >
                   {demoSpeed === 10 ? "demo speed ×10" : "real time"}
+                </button>
+                <button onClick={stopAll} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-destructive">
+                  Stop
                 </button>
               </div>
             )}
