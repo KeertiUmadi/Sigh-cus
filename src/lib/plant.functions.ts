@@ -186,10 +186,10 @@ be grudgingly impressed, not nice. Reply with JSON only.`,
   });
 
 const VOICES: Record<string, { id: string; stability: number; style: number; speed: number }> = {
-  sigh: { id: "FGY2WhTYpPnrIDTdsKH5", stability: 0.35, style: 0.65, speed: 0.92 },
-  scold: { id: "FGY2WhTYpPnrIDTdsKH5", stability: 0.3, style: 0.8, speed: 1.0 },
-  gospel: { id: "CwhRBWXzGAHq8TQ4Fs17", stability: 0.4, style: 0.7, speed: 1.0 },
-  whisper: { id: "FGY2WhTYpPnrIDTdsKH5", stability: 0.5, style: 0.5, speed: 0.88 },
+  sigh: { id: "bAq8AI9QURijOtmeFFqT", stability: 0.35, style: 0.65, speed: 0.92 },
+  scold: { id: "bAq8AI9QURijOtmeFFqT", stability: 0.3, style: 0.8, speed: 1.0 },
+  gospel: { id: "bAq8AI9QURijOtmeFFqT", stability: 0.4, style: 0.7, speed: 1.0 },
+  whisper: { id: "bAq8AI9QURijOtmeFFqT", stability: 0.5, style: 0.5, speed: 0.88 },
 };
 
 const voiceSchema = z.object({
