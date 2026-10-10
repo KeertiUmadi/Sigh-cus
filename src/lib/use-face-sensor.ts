@@ -17,7 +17,7 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const landmarkerRef = useRef<{
     detectForVideo: (v: HTMLVideoElement, t: number) => {
-      landmarks?: { x: number; y: number }[][];
+      faceLandmarks?: { x: number; y: number }[][];
     };
   } | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -108,7 +108,7 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
       lastAtRef.current = now;
 
       const results = lm.detectForVideo(v, now);
-      const face = results?.landmarks?.[0];
+      const face = results?.faceLandmarks?.[0];
       const at = Date.now();
 
       if (!face) {

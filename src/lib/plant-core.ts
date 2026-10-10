@@ -40,6 +40,8 @@ export const RULES = {
   awayMs: 20_000,
   /** mouth open + chin up held this long counts as a drink */
   drinkHoldMs: 900,
+  /** a sip is one celebration, not one per frame */
+  drinkCooldownMs: 20_000,
   /** the plant will not nag twice about the same thing inside this window */
   nagCooldownMs: 45_000,
   moodStart: 72,
@@ -99,6 +101,8 @@ export type PlantState = {
   screenMs: number;
   awayMs: number;
   drinkHoldMs: number;
+  /** when the last drink was counted, so one sip is one celebration */
+  lastDrinkAt: number;
   /** consecutive drinks without a nag in between */
   drinkStreak: number;
   drinkCount: number;
@@ -130,6 +134,7 @@ export function createState(at: number): PlantState {
     screenMs: 0,
     awayMs: 0,
     drinkHoldMs: 0,
+    lastDrinkAt: at - RULES.drinkCooldownMs,
     drinkStreak: 0,
     drinkCount: 0,
     slouchCount: 0,
@@ -223,9 +228,13 @@ export function tick(
     if (isDrink(reading, baseline)) s.drinkHoldMs += dtMs;
     else s.drinkHoldMs = 0;
 
-    if (s.drinkHoldMs >= RULES.drinkHoldMs) {
+    if (
+      s.drinkHoldMs >= RULES.drinkHoldMs &&
+      at - s.lastDrinkAt >= RULES.drinkCooldownMs
+    ) {
       events.push(event("drink", at));
       s.drinkHoldMs = 0;
+      s.lastDrinkAt = at;
       s.drinkCount += 1;
       s.drinkStreak += 1;
       s.mood += RULES.drinkBoost;

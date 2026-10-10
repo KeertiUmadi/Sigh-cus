@@ -92,7 +92,7 @@ describe("the two minute slouch rule", () => {
 });
 
 describe("drinking water", () => {
-  it("celebrates a drink held long enough and wipes the slouch timer", () => {
+  it("counts a drink held long enough and wipes the slouch timer", () => {
     const warmed = advance(createState(0), slouching, 60);
     expect(warmed.state.slouchMs).toBe(60_000);
 
@@ -104,6 +104,16 @@ describe("drinking water", () => {
     expect(state.dryMs).toBe(0);
   });
 
+  it("counts one sip as one drink, even while the mouth stays open", () => {
+    const first = advance(createState(0), drinking, 2, 500);
+    expect(first.state.drinkCount).toBe(1);
+
+    // a minute of the same open-mouthed reading only earns the next sip
+    // once the cooldown has passed
+    const later = advance(first.state, drinking, 60, 1000);
+    expect(later.state.drinkCount).toBe(2);
+  });
+
   it("is not fooled by a single open-mouthed frame", () => {
     const { state, events } = advance(createState(0), drinking, 1, 300);
     expect(events).toEqual([]);
@@ -111,8 +121,8 @@ describe("drinking water", () => {
     expect(state.drinkHoldMs).toBe(300);
   });
 
-  it("tops the mood out at one hundred", () => {
-    const { state } = advance(createState(0), drinking, 12);
+  it("never lets the mood rise past one hundred", () => {
+    const { state } = advance(createState(0), drinking, 400, 1000);
     expect(state.mood).toBe(RULES.moodMax);
   });
 });
@@ -137,8 +147,8 @@ describe("thirst, screen time and abandonment", () => {
   });
 
   it("resets a good streak when it catches you slouching", () => {
-    const drank = advance(createState(0), drinking, 3, 1000);
-    expect(drank.state.drinkStreak).toBe(3);
+    const drank = advance(createState(0), drinking, 2, 500);
+    expect(drank.state.drinkStreak).toBe(1);
 
     const after = advance(drank.state, slouching, RULES.slouchMs / 1000);
     expect(after.state.slouchCount).toBe(1);
