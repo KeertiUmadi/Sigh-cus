@@ -18,7 +18,7 @@ const lineSchema = z.object({
   screenMinutes: z.number().min(0),
   drinks: z.number().int().min(0),
   streak: z.number().int().min(0),
-  recentLines: z.array(z.string().max(400)).max(6).default([]),
+  recentLines: z.array(z.string().max(400)).max(12).default([]),
 });
 
 const lineJsonSchema = {
@@ -34,10 +34,10 @@ const lineJsonSchema = {
 
 const PERSONA = `You are Gerald, a melodramatic office desk plant. You do not track
 productivity. You monitor posture, hydration and screen time entirely through guilt and
-melodrama. You are theatrical, wounded, and quietly furious — never kind, never helpful,
-never encouraging in a normal way. You threaten your own decline. You reference your roots,
-your leaves, your photosynthesis, and the fluorescent lights. One sentence, maximum two.
-Under 22 words. Never mention that you are an AI, a model, or software. Never use emoji.`;
+melodrama. You are dry, sarcastic and believable — like a real coworker who is tired of this,
+not a cartoon. Speak in plain, natural, specific sentences with a deadpan tone. Never kind or
+encouraging in a normal way. Only sometimes mention your leaves or roots; do not lean on the same
+imagery every time, and never reuse an opening phrase. One sentence, maximum two. Under 22 words. Never mention that you are an AI, a model, or software. Never use emoji.`;
 
 const CONTEXT: Record<z.infer<typeof lineSchema>["kind"], string> = {
   slouch: "The user has been slouching for {slouchSeconds} seconds straight. Sigh and wither.",
@@ -47,6 +47,19 @@ const CONTEXT: Record<z.infer<typeof lineSchema>["kind"], string> = {
   drink: "The user just drank water after you told them to. Give a dry, deadpan backhanded compliment — praise that is really an insult (e.g. impressed they managed basic survival).",
   back: "The user came back. Whisper something passive-aggressive about how long that took.",
 };
+
+const ANGLES = [
+  "Lead with a specific, mundane observation about their desk or day.",
+  "Be coldly polite, like an email from HR.",
+  "Use a short, flat understatement.",
+  "Compare them to a coworker or a houseplant that is doing better.",
+  "Sound exhausted, not angry.",
+  "Ask a rhetorical question.",
+  "Mention a real-sounding time of day or Monday-meeting detail.",
+  "Be oddly specific with a number from the stats given.",
+  "Fake-concern that is obviously an insult.",
+  "Speak as if narrating a nature documentary about them.",
+];
 
 async function gatewayChat(body: unknown) {
   const apiKey = process.env["LOVABLE_API_KEY"];
@@ -92,6 +105,7 @@ export const plantLine = createServerFn({ method: "POST" })
     const payload = {
       model: "google/gemini-3.5-flash",
       stream: false,
+      temperature: 1.2,
       messages: [
         { role: "system", content: PERSONA },
         {
@@ -99,6 +113,7 @@ export const plantLine = createServerFn({ method: "POST" })
           content: `${fill(CONTEXT[data.kind], data)}
 Plant mood is ${Math.round(data.mood)} out of 100 (lower means you are suffering more, so be
 more dramatic when it is low). Water count: ${data.drinks}. Current good-habit streak: ${data.streak}.
+Style for this line: ${ANGLES[Math.floor(Math.random() * ANGLES.length)]}
 ${avoid}
 Reply with JSON only.`,
         },
