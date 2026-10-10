@@ -214,7 +214,7 @@ function PlantApp() {
         setLeaf(nextLeaf);
         setPulse((p) => p + 1);
         setBubble({ line: out.line, delivery: out.delivery, leaf: out.leaf, kind: ev.kind });
-        recentLines.current = [out.line, ...recentLines.current].slice(0, 5);
+        recentLines.current = [out.line, ...recentLines.current].slice(0, 12);
         setLog((l) => [{ at: ev.at, kind: ev.kind, line: out.line }, ...l].slice(0, 12));
         if (ev.kind === "drink") playFanfare();
         if ("Notification" in window && Notification.permission === "granted") {
@@ -224,7 +224,14 @@ function PlantApp() {
         await speak(out.line, out.delivery);
       } catch (e) {
         if (ev.kind === "drink") {
-          const line = "Wow. Hydrated. Truly, a historic achievement for someone of your caliber.";
+          const pool = [
+            "Wow. Hydrated. Truly, a historic achievement for someone of your caliber.",
+            "Look at you, keeping yourself alive. Groundbreaking.",
+            "One whole sip. I'll notify the newspapers.",
+            "Impressive. Most adults need a reminder for that. Oh wait, you did too.",
+            "Water. Voluntarily. I almost respect it.",
+          ];
+          const line = pool[Math.floor(Math.random() * pool.length)] ?? pool[0]!;
           setBubble({ line, delivery: "scold", leaf: "perk", kind: "drink" });
           setLog((l) => [{ at: ev.at, kind: ev.kind, line }, ...l].slice(0, 12));
           playFanfare();
