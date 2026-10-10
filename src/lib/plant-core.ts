@@ -243,13 +243,15 @@ export function tick(
     }
   }
 
+  // Slouch and thirst timers keep growing after a nag, so an ongoing slouch
+  // earns a fresh, increasingly unhinged line every cooldown window instead
+  // of the plant silently forgiving you.
   if (s.slouchMs >= RULES.slouchMs && canNag(s, "slouch", at)) {
     events.push(event("slouch", at));
     s.lastNagAt.slouch = at;
     s.mood -= RULES.slouchHit;
     s.slouchCount += 1;
     s.drinkStreak = 0;
-    s.slouchMs = 0;
   }
 
   if (s.dryMs >= RULES.thirstMs && canNag(s, "thirst", at)) {
@@ -257,7 +259,6 @@ export function tick(
     s.lastNagAt.thirst = at;
     s.mood -= RULES.thirstHit;
     s.drinkStreak = 0;
-    s.dryMs = 0;
   }
 
   if (s.screenMs >= RULES.screenMs && canNag(s, "screen", at)) {
