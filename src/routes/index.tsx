@@ -162,11 +162,37 @@ function PlantApp() {
     }
   }, []);
 
+  const [quietUntil, setQuietUntil] = useState<number | null>(null);
+  const quietRef = useRef<number | null>(null);
+  quietRef.current = quietUntil;
+  useEffect(() => {
+    if (!quietUntil) return;
+    const id = window.setTimeout(() => setQuietUntil(null), Math.max(0, quietUntil - Date.now()));
+    return () => window.clearTimeout(id);
+  }, [quietUntil]);
+
+  function goQuiet(minutes: number | null) {
+    if (minutes === null) return setQuietUntil(null);
+    setQuietUntil(Date.now() + minutes * 60_000);
+    audioRef.current?.pause();
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    setSpeaking(false);
+  }
+
   const react = useCallback(
     async (events: PlantEvent[]) => {
       if (!events.length) return;
       const ev = events.find((x) => x.kind === "drink") ?? events[events.length - 1];
       if (!ev) return;
+      // quiet time: keep counting, say nothing
+      if (quietRef.current && Date.now() < quietRef.current) {
+        if (ev.kind === "drink") {
+          setLeaf("perk");
+          setPulse((p) => p + 1);
+          setBubble({ line: "Sip counted.", delivery: "whisper", leaf: "perk", kind: "drink" });
+        }
+        return;
+      }
       // a drink always gets its comment, even if another line is mid-flight
       if (busy.current && ev.kind !== "drink") return;
       busy.current = true;
@@ -360,7 +386,7 @@ function PlantApp() {
 
           <div className="mt-2 rounded-2xl border border-primary/30 bg-primary/5 p-4">
             <p className="text-xs uppercase tracking-widest text-primary">
-              {bubble ? bubble.kind === "drink" ? "celebrating" : bubble.kind === "back" ? "noticing you" : "nagging" : "waiting"}
+              {quietUntil ? "quiet time" : bubble ? bubble.kind === "drink" ? "celebrating" : bubble.kind === "back" ? "noticing you" : "nagging" : "waiting"}
             </p>
             <p className="mt-2 min-h-[3.5rem] font-display text-xl italic leading-snug">
               {bubble?.line ??
@@ -426,6 +452,15 @@ function PlantApp() {
                 ) : (
                   <span className="text-sm text-primary">Posture baseline saved.</span>
                 )}
+                {quietUntil ? (
+                  <button onClick={() => goQuiet(null)} className="rounded-xl border border-primary px-4 py-2 text-sm text-primary">
+                    Quiet until {new Date(quietUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} — let Gerald talk again
+                  </button>
+                ) : (
+                  <button onClick={() => goQuiet(30)} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
+                    Quiet for 30 minutes
+                  </button>
+                )}
                 <button onClick={drankByHand} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
                   I just drank water
                 </button>
@@ -450,6 +485,15 @@ function PlantApp() {
                     {k === "upright" ? "sit up" : k === "away" ? "walk away" : k}
                   </button>
                 ))}
+                {quietUntil ? (
+                  <button onClick={() => goQuiet(null)} className="rounded-full border border-primary px-4 py-1.5 text-sm text-primary">
+                    Quiet until {new Date(quietUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} — let Gerald talk again
+                  </button>
+                ) : (
+                  <button onClick={() => goQuiet(30)} className="rounded-full border border-border px-4 py-1.5 text-sm hover:border-primary">
+                    Quiet for 30 minutes
+                  </button>
+                )}
                 <button
                   onClick={() => setDemoSpeed((s) => (s === 1 ? 10 : 1))}
                   className="ml-auto rounded-full border border-border px-3 py-1 text-xs hover:border-primary"
