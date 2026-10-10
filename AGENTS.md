@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- AI calls go through a createServerFn that reads LOVABLE_API_KEY inside the handler (src/lib/remix.functions.ts); why: key must stay server-side.
