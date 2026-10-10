@@ -11,3 +11,4 @@
 - [ ] Tiger Data streak history — blocked: needs Lovable Cloud enabled
 - [ ] Custom domain for the app — the user declined the purchase today; fernforgivemenot.live is still free to take ($3.34 first year, $31.25 a year after)
 - [ ] Push the code to the team repo github.com/ShubhangiPurohit-dev/Sigh-cus — blocked: signed in as KeertiUmadi, who has no write access there; needs Shubhangi to add KeertiUmadi as a collaborator with Write. GitHub connection is linked and the upload script (86 files) is ready to re-run.
+- [ ] Hand the user a zip of the project files
