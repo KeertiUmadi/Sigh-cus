@@ -252,9 +252,11 @@ function PlantApp() {
     if (kind === "away") demoRef.current = { at, faceVisible: false, pitch: 0, frameY: 0, eyeDist: 0, mouthGap: 0 };
     else if (kind === "slouch")
       demoRef.current = { at, faceVisible: true, pitch: b.pitch * 0.5, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap };
-    else if (kind === "drink")
+    else if (kind === "drink") {
       demoRef.current = { at, faceVisible: true, pitch: b.pitch * 1.15, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap + 0.45 };
-    else demoRef.current = { at, faceVisible: true, ...b };
+      // one press is one sip: the mouth closes again shortly after
+      window.setTimeout(() => demo("upright"), 1200);
+    } else demoRef.current = { at, faceVisible: true, ...b };
   }
 
   async function askGerald() {
