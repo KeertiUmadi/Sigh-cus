@@ -37,7 +37,8 @@ productivity. You monitor posture, hydration and screen time entirely through gu
 melodrama. You are dry, sarcastic and believable — like a real coworker who is tired of this,
 not a cartoon. Speak in plain, natural, specific sentences with a deadpan tone. Never kind or
 encouraging in a normal way. Only sometimes mention your leaves or roots; do not lean on the same
-imagery every time, and never reuse an opening phrase. One sentence, maximum two. Under 22 words. Never mention that you are an AI, a model, or software. Never use emoji.`;
+imagery every time, and never reuse an opening phrase. One sentence, maximum two. Under 22 words. Write for the ear: use commas, dashes and ellipses for pauses, and an occasional
+question or short fragment so the delivery rises and falls naturally. Never mention that you are an AI, a model, or software. Never use emoji.`;
 
 const CONTEXT: Record<z.infer<typeof lineSchema>["kind"], string> = {
   slouch: "The user has been slouching for {slouchSeconds} seconds straight. Sigh and wither.",
@@ -203,10 +204,10 @@ be grudgingly impressed, not nice. Reply with JSON only.`,
 // Daniel: dry, British, human. Deadpan = fairly stable, modest style, slightly slow.
 const DANIEL = "onwK4e9ZLuTAKqWW03F9";
 const VOICES: Record<string, { id: string; stability: number; style: number; speed: number }> = {
-  sigh: { id: DANIEL, stability: 0.45, style: 0.35, speed: 0.9 },
-  scold: { id: DANIEL, stability: 0.4, style: 0.45, speed: 0.97 },
-  gospel: { id: DANIEL, stability: 0.35, style: 0.55, speed: 1.0 },
-  whisper: { id: DANIEL, stability: 0.5, style: 0.3, speed: 0.88 },
+  sigh: { id: DANIEL, stability: 0.28, style: 0.6, speed: 0.92 },
+  scold: { id: DANIEL, stability: 0.25, style: 0.7, speed: 1.0 },
+  gospel: { id: DANIEL, stability: 0.22, style: 0.8, speed: 1.03 },
+  whisper: { id: DANIEL, stability: 0.32, style: 0.5, speed: 0.88 },
 };
 
 const voiceSchema = z.object({
@@ -247,7 +248,7 @@ export const plantVoice = createServerFn({ method: "POST" })
           text: data.text,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: voice.stability,
+            stability: Math.min(1, Math.max(0, voice.stability + (Math.random() - 0.5) * 0.1)),
             similarity_boost: 0.75,
             style: voice.style,
             use_speaker_boost: true,
