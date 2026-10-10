@@ -6,6 +6,8 @@ import { playFanfare } from "@/lib/fanfare";
 import {
   calibrate,
   createState,
+  drinkSignals,
+  logDrink,
   moodLabel,
   RULES,
   tick,

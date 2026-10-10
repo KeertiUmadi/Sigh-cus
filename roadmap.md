@@ -14,3 +14,6 @@
 - [ ] Copy the code into the team repo github.com/ShubhangiPurohit-dev/Sigh-cus — blocked: KeertiUmadi has no write access there; needs Shubhangi to add KeertiUmadi as a collaborator with Write, then re-run /tmp/browser/push-gh/gh_push.py
 - [x] Hand the user a zip of the project files — saved as guilt-trip-plant.zip in Files
 - [x] Publish the app so anyone with a link can open it — publishing scheduled for https://tune-cataloger-buddy.lovable.app (public visibility)
+
+- [ ] Snooze: pause Gerald's comments for a while (keep counting)
+- [x] Fix sip detection (chin-up sign was inverted) + manual "I just drank water" button
