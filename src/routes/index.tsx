@@ -374,7 +374,7 @@ function PlantApp() {
               ref={videoRef}
               playsInline
               muted
-              className={`mt-4 h-40 w-full rounded-xl object-cover ${mode === "camera" ? "" : "hidden"}`}
+              className={`mt-4 aspect-video w-full -scale-x-100 rounded-xl bg-muted object-contain ${mode === "camera" ? "" : "hidden"}`}
             />
 
             {mode === "camera" && (
