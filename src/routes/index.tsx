@@ -152,7 +152,7 @@ function PlantApp() {
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
         u.rate = delivery === "whisper" ? 0.82 : 0.95;
-        u.pitch = delivery === "gospel" ? 1.2 : 0.85;
+        u.pitch = (delivery === "gospel" ? 1.2 : 0.85) + (Math.random() - 0.5) * 0.3;
         u.onend = () => setSpeaking(false);
         window.speechSynthesis.speak(u);
       } else {
