@@ -48,6 +48,13 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-plant-leaf: var(--plant-leaf);
+  --color-plant-leaf-vein: var(--plant-leaf-vein);
+  --color-plant-stem: var(--plant-stem);
+  --color-pot: var(--pot);
+  --color-pot-rim: var(--pot-rim);
+  --color-soil: var(--soil);
+  --color-pot-face: var(--pot-face);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -71,8 +78,15 @@
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.8 0.15 70);
+  --primary: oklch(0.82 0.16 120);
   --primary-foreground: oklch(0.18 0.03 280);
+  --plant-leaf: oklch(0.72 0.16 145);
+  --plant-leaf-vein: oklch(0.55 0.12 145);
+  --plant-stem: oklch(0.6 0.13 140);
+  --pot: oklch(0.45 0.11 45);
+  --pot-rim: oklch(0.53 0.11 45);
+  --soil: oklch(0.3 0.05 60);
+  --pot-face: oklch(0.15 0.02 60);
   --secondary: oklch(0.26 0.04 280);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
@@ -132,6 +146,13 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  --plant-leaf: oklch(0.76 0.17 145);
+  --plant-leaf-vein: oklch(0.58 0.13 145);
+  --plant-stem: oklch(0.64 0.14 140);
+  --pot: oklch(0.5 0.12 45);
+  --pot-rim: oklch(0.58 0.12 45);
+  --soil: oklch(0.34 0.06 60);
+  --pot-face: oklch(0.13 0.02 60);
 }
 
 @layer base {
@@ -147,3 +168,34 @@
 
 body { font-family: var(--font-sans); }
 .font-display { font-family: var(--font-display); }
+
+/* the plant shudders when it is disappointed in you */
+@keyframes plant-shudder {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-2.5deg); }
+  40% { transform: rotate(2deg); }
+  60% { transform: rotate(-1.5deg); }
+  80% { transform: rotate(1deg); }
+}
+.plant-shudder {
+  animation: plant-shudder 0.9s ease-in-out 2;
+  transform-origin: 50% 90%;
+}
+
+/* the pot's mouth moves while it is talking */
+@keyframes plant-talk {
+  0%, 100% { transform: scaleY(0.45); }
+  50% { transform: scaleY(1.15); }
+}
+.plant-talk {
+  animation: plant-talk 0.35s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* the speech bubble arrives with a little bounce */
+@keyframes speech-pop {
+  0% { opacity: 0; transform: translateY(6px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.speech-pop { animation: speech-pop 0.25s ease-out; }
