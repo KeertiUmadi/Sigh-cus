@@ -108,10 +108,10 @@ describe("drinking water", () => {
     const first = advance(createState(0), drinking, 2, 500);
     expect(first.state.drinkCount).toBe(1);
 
-    // a minute of the same open-mouthed reading only earns the next sip
-    // once the cooldown has passed
+    // a minute of the same open-mouthed reading only earns the next two sips,
+    // one per cooldown window — not one per frame
     const later = advance(first.state, drinking, 60, 1000);
-    expect(later.state.drinkCount).toBe(2);
+    expect(later.state.drinkCount).toBe(3);
   });
 
   it("is not fooled by a single open-mouthed frame", () => {
