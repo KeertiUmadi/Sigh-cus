@@ -15,5 +15,5 @@
 - [x] Hand the user a zip of the project files — saved as guilt-trip-plant.zip in Files
 - [x] Publish the app so anyone with a link can open it — publishing scheduled for https://tune-cataloger-buddy.lovable.app (public visibility)
 
-- [ ] Snooze: pause Gerald's comments for a while (keep counting)
+- [x] Snooze: pause Gerald's comments for a while (keep counting)
 - [x] Fix sip detection (chin-up sign was inverted) + manual "I just drank water" button
