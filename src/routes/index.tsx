@@ -274,13 +274,25 @@ function PlantApp() {
     const at = Date.now();
     if (kind === "away") demoRef.current = { at, faceVisible: false, pitch: 0, frameY: 0, eyeDist: 0, mouthGap: 0 };
     else if (kind === "slouch")
-      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 0.5, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap };
+      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 1.5, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap };
     else if (kind === "drink") {
-      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 1.15, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap + 0.45 };
+      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 0.6, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap + 0.25 };
       // one press is one sip: the mouth closes again shortly after
       window.setTimeout(() => demo("upright"), 1200);
     } else demoRef.current = { at, faceVisible: true, ...b };
   }
+
+  function drankByHand() {
+    const out = logDrink(stateRef.current, Date.now());
+    commit(out.state);
+    if (out.events.length) void react(out.events);
+    else setVoiceNote("Already counted a sip in the last 20 seconds.");
+  }
+
+  const sip =
+    mode === "camera" && readingRef.current && baseRef.current
+      ? drinkSignals(readingRef.current, baseRef.current)
+      : { chinUp: false, mouthOpen: false, chinWayUp: false };
 
   async function askGerald() {
     const frame = captureFrame?.();
@@ -412,6 +424,9 @@ function PlantApp() {
                 ) : (
                   <span className="text-sm text-primary">Posture baseline saved.</span>
                 )}
+                <button onClick={drankByHand} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
+                  I just drank water
+                </button>
                 <button onClick={askGerald} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
                   What does my posture look like right now?
                 </button>
@@ -443,6 +458,15 @@ function PlantApp() {
                   Stop
                 </button>
               </div>
+            )}
+
+            {mode === "camera" && baseline && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Sip detector: chin up{" "}
+                <span className={sip.chinUp ? "text-primary" : ""}>{sip.chinUp ? "yes" : "no"}</span> · mouth open{" "}
+                <span className={sip.mouthOpen ? "text-primary" : ""}>{sip.mouthOpen ? "yes" : "no"}</span>
+                {" "}— tip your head back like you are drinking and hold it for a second.
+              </p>
             )}
 
             {error && <p className="mt-3 text-sm text-destructive">{error}</p>}

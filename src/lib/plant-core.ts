@@ -11,7 +11,11 @@ export type Reading = {
   /** epoch ms of this reading */
   at: number;
   faceVisible: boolean;
-  /** nose tip below the eye line, divided by eye distance. Smaller = head tilted down. */
+  /**
+   * nose tip below the eye line, divided by eye size. The nose sticks out, so
+   * dropping your head pushes it further below the eyes (larger) and tipping
+   * your chin up pulls it towards them (smaller).
+   */
   pitch: number;
   /** eye line height in the frame, 0 = top, 1 = bottom. Larger = you sank down. */
   frameY: number;
@@ -38,8 +42,8 @@ export const RULES = {
   screenMs: 60 * 60_000,
   /** face gone for this long -> abandonment nag */
   awayMs: 20_000,
-  /** mouth open + chin up held this long counts as a drink */
-  drinkHoldMs: 900,
+  /** chin tipped up (mouth open, or chin way up) held this long counts as a drink */
+  drinkHoldMs: 600,
   /** a sip is one celebration, not one per frame */
   drinkCooldownMs: 20_000,
   /** the plant will not nag twice about the same thing inside this window */
@@ -64,11 +68,16 @@ export const RULES = {
  * the UI as sensitivity, because every webcam and chair is different.
  */
 export const SENSITIVITY = {
-  slouchPitchRatio: 0.78,
+  /** head dropped: nose this much further below the eyes than when calibrated */
+  slouchPitchRatio: 1.22,
   slouchFrameY: 0.07,
   slouchEyeRatio: 1.25,
-  drinkGapAdd: 0.35,
-  drinkPitchRatio: 1.05,
+  /** mouth this much more open than at rest */
+  drinkGapAdd: 0.12,
+  /** chin up: nose this much closer to the eye line than when calibrated */
+  drinkPitchRatio: 0.82,
+  /** chin so far up that it counts even when the bottle hides the mouth */
+  drinkPitchHardRatio: 0.65,
 };
 
 export type NagKind = "slouch" | "thirst" | "screen" | "away";
@@ -171,25 +180,56 @@ export function calibrate(readings: Reading[]): Baseline {
  */
 export function isSlouch(r: Reading, b: Baseline) {
   if (!r.faceVisible) return false;
-  const pitchDrop = r.pitch < b.pitch * SENSITIVITY.slouchPitchRatio;
+  const pitchDrop = r.pitch > b.pitch * SENSITIVITY.slouchPitchRatio;
   const sunk = r.frameY > b.frameY + SENSITIVITY.slouchFrameY;
   const leaned = r.eyeDist > b.eyeDist * SENSITIVITY.slouchEyeRatio;
   const hits = Number(pitchDrop) + Number(sunk) + Number(leaned);
   if (hits >= 2) return true;
   return (
-    r.pitch < b.pitch * (SENSITIVITY.slouchPitchRatio - 0.15) ||
+    r.pitch > b.pitch * (SENSITIVITY.slouchPitchRatio + 0.18) ||
     r.frameY > b.frameY + SENSITIVITY.slouchFrameY * 2 ||
     r.eyeDist > b.eyeDist * (SENSITIVITY.slouchEyeRatio + 0.2)
   );
 }
 
-/** Mouth open wider than your resting face, with the chin tipped up. */
+/** The two things a sip looks like to the camera, exposed so the UI can show them live. */
+export function drinkSignals(r: Reading, b: Baseline) {
+  if (!r.faceVisible) return { chinUp: false, mouthOpen: false, chinWayUp: false };
+  return {
+    chinUp: r.pitch < b.pitch * SENSITIVITY.drinkPitchRatio,
+    chinWayUp: r.pitch < b.pitch * SENSITIVITY.drinkPitchHardRatio,
+    mouthOpen: r.mouthGap > b.mouthGap + SENSITIVITY.drinkGapAdd,
+  };
+}
+
+/**
+ * Chin tipped up with the mouth open, or the chin tipped right back (the
+ * bottle usually hides the mouth then). A yawn keeps the chin level.
+ */
 export function isDrink(r: Reading, b: Baseline) {
-  if (!r.faceVisible) return false;
-  return (
-    r.mouthGap > b.mouthGap + SENSITIVITY.drinkGapAdd &&
-    r.pitch > b.pitch * SENSITIVITY.drinkPitchRatio
-  );
+  const s = drinkSignals(r, b);
+  return (s.chinUp && s.mouthOpen) || s.chinWayUp;
+}
+
+/** Count a sip: one celebration per cooldown window. Mutates s. */
+function countDrink(s: PlantState, at: number, events: PlantEvent[]) {
+  events.push(event("drink", at));
+  s.drinkHoldMs = 0;
+  s.lastDrinkAt = at;
+  s.drinkCount += 1;
+  s.drinkStreak += 1;
+  s.mood = clamp(s.mood + RULES.drinkBoost, RULES.moodMin, RULES.moodMax);
+  s.dryMs = 0;
+  s.slouchMs = 0;
+}
+
+/** "I just drank" pressed by hand, for when the camera missed the sip. */
+export function logDrink(state: PlantState, at: number): { state: PlantState; events: PlantEvent[] } {
+  const events: PlantEvent[] = [];
+  const s: PlantState = { ...state, lastNagAt: { ...state.lastNagAt } };
+  if (at - s.lastDrinkAt < RULES.drinkCooldownMs) return { state: s, events };
+  countDrink(s, at, events);
+  return { state: s, events };
 }
 
 export function moodLabel(mood: number) {
@@ -241,14 +281,7 @@ export function tick(
       s.drinkHoldMs >= RULES.drinkHoldMs &&
       at - s.lastDrinkAt >= RULES.drinkCooldownMs
     ) {
-      events.push(event("drink", at));
-      s.drinkHoldMs = 0;
-      s.lastDrinkAt = at;
-      s.drinkCount += 1;
-      s.drinkStreak += 1;
-      s.mood += RULES.drinkBoost;
-      s.dryMs = 0;
-      s.slouchMs = 0;
+      countDrink(s, at, events);
     } else {
       s.dryMs += dtMs;
     }

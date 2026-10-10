@@ -5,6 +5,7 @@ import {
   createState,
   isDrink,
   isSlouch,
+  logDrink,
   tick,
   type PlantEvent,
   type PlantState,
@@ -22,8 +23,8 @@ const upright: Reading = {
 };
 
 const baseline = calibrate([upright]);
-const slouching: Reading = { ...upright, pitch: 0.5 };
-const drinking: Reading = { ...upright, pitch: 0.9, mouthGap: 0.52 };
+const slouching: Reading = { ...upright, pitch: 1.2 };
+const drinking: Reading = { ...upright, pitch: 0.6, mouthGap: 0.3 };
 const gone: Reading = {
   ...upright,
   faceVisible: false,
@@ -61,6 +62,28 @@ describe("posture and drink detection", () => {
     expect(isDrink(upright, baseline)).toBe(false);
     // a wide-open mouth without the chin lift (a yawn) is not a drink
     expect(isDrink({ ...upright, mouthGap: 0.6 }, baseline)).toBe(false);
+    // a wide-open mouth with the head dropped is not a drink either
+    expect(isDrink({ ...upright, pitch: 1.1, mouthGap: 0.6 }, baseline)).toBe(false);
+  });
+
+  it("counts the chin tipped right back as a drink even when the bottle hides the mouth", () => {
+    expect(isDrink({ ...upright, pitch: 0.45 }, baseline)).toBe(true);
+    // a small chin lift with a closed mouth is just looking up
+    expect(isDrink({ ...upright, pitch: 0.6 }, baseline)).toBe(false);
+  });
+
+  it("does not call a lifted chin a slouch", () => {
+    expect(isSlouch({ ...upright, pitch: 0.45 }, baseline)).toBe(false);
+  });
+
+  it("lets you log a missed sip by hand, once per cooldown", () => {
+    const first = logDrink(createState(0), 1000);
+    expect(first.events.map((e) => e.kind)).toEqual(["drink"]);
+    expect(first.state.drinkCount).toBe(1);
+    expect(first.state.dryMs).toBe(0);
+    const again = logDrink(first.state, 1000 + RULES.drinkCooldownMs - 1);
+    expect(again.events).toEqual([]);
+    expect(again.state.drinkCount).toBe(1);
   });
 
   it("refuses to calibrate when no face is in frame", () => {
