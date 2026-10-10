@@ -10,4 +10,4 @@
 - [ ] Backboard memory of past sessions — blocked: needs the user's Backboard API key
 - [ ] Tiger Data streak history — blocked: needs Lovable Cloud enabled
 - [ ] Custom domain for the app — the user declined the purchase today; fernforgivemenot.live is still free to take ($3.34 first year, $31.25 a year after)
-- [ ] Get the code onto a git repository the user controls (GitHub sync) — blocked: needs their GitHub account connected in the project's settings
+- [ ] Push the code to the team repo github.com/ShubhangiPurohit-dev/Sigh-cus — blocked: signed in as KeertiUmadi, who has no write access there; needs Shubhangi to add KeertiUmadi as a collaborator with Write. GitHub connection is linked and the upload script (86 files) is ready to re-run.
