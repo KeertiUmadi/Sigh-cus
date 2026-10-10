@@ -150,6 +150,7 @@ function PlantApp() {
     async (events: PlantEvent[]) => {
       if (!events.length || busy.current) return;
       const ev = events[events.length - 1];
+      if (!ev) return;
       busy.current = true;
       const s = stateRef.current;
       try {
@@ -293,7 +294,10 @@ function PlantApp() {
 
   const active = mode !== "off";
   const sessionMinutes = useMemo(
-    () => Math.floor((state.trail.length ? state.trail[state.trail.length - 1].at - state.startedAt : 0) / 60000),
+    () =>
+      Math.floor(
+        ((state.trail[state.trail.length - 1]?.at ?? state.startedAt) - state.startedAt) / 60000,
+      ),
     [state],
   );
 

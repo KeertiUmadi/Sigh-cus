@@ -217,7 +217,7 @@ export const plantVoice = createServerFn({ method: "POST" })
     const apiKey = process.env["ELEVENLABS_API_KEY"];
     if (!apiKey) throw new Error("Voice is not connected to this project.");
 
-    const voice = VOICES[data.delivery] ?? VOICES.sigh;
+    const voice = VOICES[data.delivery] ?? VOICES["sigh"]!;
     const res = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voice.id}?output_format=mp3_44100_128`,
       {

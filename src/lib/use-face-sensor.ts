@@ -17,8 +17,8 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const landmarkerRef = useRef<{
     detectForVideo: (v: HTMLVideoElement, t: number) => {
-      landmarks: { x: number; y: number }[][];
-    }[] | null;
+      landmarks?: { x: number; y: number }[][];
+    };
   } | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const callbackRef = useRef(onReading);

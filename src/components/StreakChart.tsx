@@ -17,8 +17,8 @@ export function StreakChart({ trail }: { trail: TrailPoint[] }) {
     );
   }
 
-  const first = trail[0].at;
-  const last = trail[trail.length - 1].at || first + 1;
+  const first = trail[0]?.at ?? 0;
+  const last = trail[trail.length - 1]?.at ?? first + 1;
   const span = Math.max(1, last - first);
   const x = (at: number) => pad + ((at - first) / span) * (W - pad * 2);
   const y = (mood: number) => H - pad - (Math.max(0, Math.min(100, mood)) / 100) * (H - pad * 2);
