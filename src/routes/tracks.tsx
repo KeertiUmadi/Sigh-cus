@@ -30,10 +30,10 @@ const MAIN: Item[] = [
 
 const MLH: Item[] = [
   { name: "Gemini API", note: "Writes Gerald's guilt lines and judges posture from camera frames.", status: "Working" },
-  { name: "ElevenLabs", note: "Gerald's voice (Sigma Centauri). Browser voice speaks until the key permissions are fixed.", status: "Waiting on key permissions" },
+  { name: "ElevenLabs", note: "Gerald's voice (Daniel, dry British). The key works; the app runs text-only for now until we lock in the lines.", status: "Key working, voice paused" },
   { name: "Backboard.io", note: "Planned: memory so Gerald remembers your past slouching.", status: "Waiting on API key" },
   { name: "Tiger Data", note: "Planned: store guilt streaks long term.", status: "Not started" },
-  { name: "GoDaddy Registry", note: "Optional side prize for a domain name. No domain bought yet.", status: "Optional" },
+  { name: "GoDaddy Registry", note: "Domain sigh-cus.design claimed with the event promo code and connected to the app.", status: "Done" },
   { name: "Solana", note: "Doesn't fit the idea.", status: "Dropped" },
   { name: "Vultr", note: "Doesn't fit the idea.", status: "Dropped" },
 ];
