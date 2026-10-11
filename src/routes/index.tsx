@@ -104,6 +104,31 @@ function PlantApp() {
   const calibSamples = useRef<Reading[]>([]);
   const collecting = useRef(false);
   const recentLines = useRef<string[]>([]);
+  const memories = useRef<string[]>([]);
+  const MEM_KEY = "sigh-cus-memory-id";
+  const remember = useCallback(async (ev: PlantEvent) => {
+    if (ev.kind === "back") return;
+    const label = ev.kind === "fixed" ? `fixed their ${ev.of ?? "slouch"} habit` : ev.kind === "drink" ? "finally drank water" : `triggered a ${ev.kind} nag`;
+    const text = `On ${new Date().toDateString()} at ${new Date().toLocaleTimeString()}, the user ${label}.`;
+    try {
+      const out = await rememberHabit({ data: { assistantId: localStorage.getItem(MEM_KEY) ?? undefined, text } });
+      if (out.assistantId) {
+        localStorage.setItem(MEM_KEY, out.assistantId);
+        memories.current = [...memories.current, text].slice(-8);
+      }
+    } catch {
+      /* memory is optional */
+    }
+  }, []);
+  useEffect(() => {
+    const id = localStorage.getItem(MEM_KEY);
+    if (!id) return;
+    void recallHabits({ data: { assistantId: id } })
+      .then((r) => {
+        memories.current = r.memories;
+      })
+      .catch(() => {});
+  }, []);
   const busy = useRef(false);
   const modeRef = useRef<Mode>("off");
   const speedRef = useRef(1);
@@ -373,7 +398,7 @@ function PlantApp() {
         busy.current = false;
       }
     },
-    [speak],
+    [speak, remember],
   );
 
   // the watching loop
