@@ -78,12 +78,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Guilt-Trip Plant" },
+      { title: "Sigh-cus" },
       {
         name: "description",
         content: "A melodramatic office desk plant that judges your posture, hydration and screen time.",
       },
-      { property: "og:title", content: "Guilt-Trip Plant" },
+      { property: "og:title", content: "Sigh-cus" },
       {
         property: "og:description",
         content: "Slouch for two minutes and your desk plant audibly despairs.",

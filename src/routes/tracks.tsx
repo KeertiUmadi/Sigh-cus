@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-const TITLE = "Our tracks — Guilt-Trip Plant";
+const TITLE = "Our tracks — Sigh-cus";
 const DESC =
-  "Which CodeRED Orion and MLH tracks the Guilt-Trip Plant is going for, and where each one stands.";
+  "Which CodeRED Orion and MLH tracks the Sigh-cus desk plant is going for, and where each one stands.";
 
 export const Route = createFileRoute("/tracks")({
   head: () => ({

@@ -1,4 +1,4 @@
-# Guilt-Trip Plant
+# Sigh-cus
 
 A passive-aggressive office desk plant that watches how you sit and whether you've had any water — and makes you feel about it.
 
