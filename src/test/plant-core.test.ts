@@ -186,3 +186,24 @@ describe("thirst, screen time and abandonment", () => {
     expect(fixed.state.slouchNagged).toBe(false);
   });
 });
+
+describe("face habits", () => {
+  const calm: Reading = { ...upright, blink: 0.6 };
+  it("nags about each habit after its time and confirms the fix", () => {
+    const cases: [Partial<Reading>, string, number][] = [
+      [{ browDown: 0.8 }, "frown", 5],
+      [{ blink: 0 }, "stare", 10],
+      [{ eyeDist: 0.25 }, "close", 10],
+      [{ handAtMouth: true }, "nails", 5],
+      [{ jawOpen: 0.8 }, "yawn", 5],
+    ];
+    for (const [patch, kind, secs] of cases) {
+      const early = advance(createState(0), { ...calm, ...patch }, secs - 1);
+      expect(early.events.some((e) => e.kind === kind)).toBe(false);
+      const on = advance(createState(0), { ...calm, ...patch }, secs);
+      expect(on.events.some((e) => e.kind === kind)).toBe(true);
+      const off = advance(on.state, calm, 3);
+      expect(off.events.some((e) => e.kind === "fixed" && e.of === kind)).toBe(true);
+    }
+  });
+});

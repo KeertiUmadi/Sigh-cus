@@ -47,6 +47,12 @@ export const Route = createFileRoute("/")({
 });
 
 const STORE_KEY = "guilt-trip-plant/v1";
+const DEMO_KINDS = ["slouch", "drink", "away", "frown", "stare", "close", "nails", "yawn", "phone", "upright"] as const;
+type DemoKind = (typeof DEMO_KINDS)[number];
+const DEMO_LABEL: Record<DemoKind, string> = {
+  slouch: "slouch", drink: "drink", away: "walk away", frown: "frown", stare: "stare",
+  close: "lean in", nails: "bite nails", yawn: "yawn", phone: "check phone", upright: "behave",
+};
 
 /** Used when running without a camera, so the demo never depends on hardware. */
 const SYNTH_BASELINE: Baseline = { pitch: 0.8, frameY: 0.35, eyeDist: 0.18, mouthGap: 0.12 };
@@ -274,6 +280,7 @@ function PlantApp() {
         const out = await plantLine({
           data: {
             kind: ev.kind,
+            fixedOf: ev.of,
             mood: s.mood,
             slouchSeconds: s.slouchMs / 1000,
             dryMinutes: s.dryMs / 60000,
@@ -297,7 +304,11 @@ function PlantApp() {
         await speak(out.line, out.delivery);
       } catch (e) {
         if (ev.kind === "fixed") {
-          const pool = [
+          const pool = ev.of && ev.of !== "slouch" ? [
+            "Oh, you stopped. Truly, a hero walks among us.",
+            "Fixed it. Only took being shamed by a fern.",
+            "Better. Not good, but better. Baby steps.",
+          ] : [
             "Oh, a straight spine. Look at you, doing the bare minimum.",
             "Posture corrected. I'd clap, but I'm a plant.",
             "There it is. Was that so hard? Apparently, yes.",
@@ -428,17 +439,24 @@ function PlantApp() {
     }, 2500);
   }
 
-  function demo(kind: "slouch" | "drink" | "away" | "upright") {
+  function demo(kind: DemoKind) {
     const b = baseRef.current ?? SYNTH_BASELINE;
     const at = Date.now();
-    if (kind === "away") demoRef.current = { at, faceVisible: false, pitch: 0, frameY: 0, eyeDist: 0, mouthGap: 0 };
+    const calm = { at, faceVisible: true, ...b, blink: 0.6 };
+    if (kind === "frown") demoRef.current = { ...calm, browDown: 0.8 };
+    else if (kind === "stare") demoRef.current = { ...calm, blink: 0 };
+    else if (kind === "close") demoRef.current = { ...calm, eyeDist: b.eyeDist * 1.35 };
+    else if (kind === "nails") demoRef.current = { ...calm, handAtMouth: true };
+    else if (kind === "yawn") demoRef.current = { ...calm, jawOpen: 0.8 };
+    else if (kind === "phone") demoRef.current = { ...calm, lookDown: 0.8 };
+    else if (kind === "away") demoRef.current = { at, faceVisible: false, pitch: 0, frameY: 0, eyeDist: 0, mouthGap: 0 };
     else if (kind === "slouch")
       demoRef.current = { at, faceVisible: true, pitch: b.pitch * 1.5, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap };
     else if (kind === "drink") {
       demoRef.current = { at, faceVisible: true, pitch: b.pitch * 0.6, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap + 0.25 };
       // one press is one sip: the mouth closes again shortly after
       window.setTimeout(() => demo("upright"), 1200);
-    } else demoRef.current = { at, faceVisible: true, ...b };
+    } else demoRef.current = calm;
   }
 
   function drankByHand() {
@@ -635,13 +653,13 @@ function PlantApp() {
             {mode === "demo" && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <span className="mr-1 text-sm text-muted-foreground">Pretend that I…</span>
-                {(["slouch", "drink", "away", "upright"] as const).map((k) => (
+                {DEMO_KINDS.map((k) => (
                   <button
                     key={k}
                     onClick={() => demo(k)}
                     className="rounded-full border border-border px-4 py-1.5 text-sm capitalize hover:border-primary"
                   >
-                    {k === "upright" ? "sit up" : k === "away" ? "walk away" : k}
+                    {DEMO_LABEL[k]}
                   </button>
                 ))}
                 {quietUntil ? (
@@ -683,7 +701,7 @@ function PlantApp() {
             <div className="flex items-baseline justify-between">
               <h2 className="font-display text-2xl">Guilt streak</h2>
               <span className="text-xs text-muted-foreground">
-                {sessionMinutes} min watched · two minutes of slouching earns a sigh
+                {sessionMinutes} min watched · ten seconds of slouching earns a sigh
               </span>
             </div>
             <div className="mt-4">
