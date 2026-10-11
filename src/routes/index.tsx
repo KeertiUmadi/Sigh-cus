@@ -283,8 +283,14 @@ function PlantApp() {
   }, []);
 
   async function beginCamera() {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission().catch(() => undefined);
+    // Some browsers (older Safari, embedded frames) throw here — never let it block the camera.
+    try {
+      if ("Notification" in window && Notification.permission === "default") {
+        const p = Notification.requestPermission() as Promise<NotificationPermission> | undefined;
+        p?.catch?.(() => undefined);
+      }
+    } catch {
+      /* ignore */
     }
     setMode("camera");
     await new Promise((r) => setTimeout(r, 0));
@@ -435,7 +441,7 @@ function PlantApp() {
                 <button
                   onClick={beginCamera}
                   disabled={status === "loading"}
-                  className="rounded-xl bg-primary px-5 py-2.5 font-medium text-primary-foreground disabled:opacity-50"
+                  className="cursor-pointer rounded-xl bg-primary px-5 py-2.5 font-medium text-primary-foreground transition hover:opacity-90 hover:ring-2 hover:ring-primary/40 disabled:cursor-wait disabled:opacity-50"
                 >
                   {status === "loading" ? "Opening camera…" : "Start the camera"}
                 </button>
