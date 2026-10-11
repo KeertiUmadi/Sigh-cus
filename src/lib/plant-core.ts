@@ -341,7 +341,10 @@ export function tick(
     if (isDrink(reading, baseline)) s.drinkHoldMs += dtMs;
     else s.drinkHoldMs = 0;
 
+    // Only counts once Gerald has nagged about thirst and no sip has answered it yet.
+    const thirstNagOpen = (s.lastNagAt.thirst ?? -Infinity) > s.lastDrinkAt;
     if (
+      thirstNagOpen &&
       s.drinkHoldMs >= RULES.drinkHoldMs &&
       at - s.lastDrinkAt >= RULES.drinkCooldownMs
     ) {
