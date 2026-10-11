@@ -32,6 +32,13 @@ export function Plant({
   const stemLean = (1 - health) * 14;
   const eyeOpen = 0.35 + health * 0.65;
   const mouthCurve = speaking ? 1 : health * 0.8 - 0.4;
+  // Leaves brown out as mood drops, then start dropping off entirely.
+  const witherMix = Math.round(Math.min(1, Math.max(0, (0.6 - health) / 0.45)) * 85);
+  const leafColor = `color-mix(in srgb, var(--color-plant-leaf) ${100 - witherMix}%, var(--color-plant-withered))`;
+  const stemColor = `color-mix(in srgb, var(--color-plant-stem) ${100 - witherMix}%, var(--color-plant-withered))`;
+  // Shed order: topmost (smallest) leaves give up first.
+  const attachedCount =
+    health > 0.55 ? 5 : health > 0.35 ? 4 : health > 0.18 ? 3 : health > 0.05 ? 2 : 0;
 
   return (
     <svg
