@@ -24,13 +24,13 @@ export type Reading = {
   /** mouth opening relative to eye distance */
   mouthGap: number;
   /** face blendshapes 0..1 (camera only; missing = not measured) */
-  browDown?: number;
-  squint?: number;
-  blink?: number;
-  jawOpen?: number;
-  lookDown?: number;
+  browDown?: number | undefined;
+  squint?: number | undefined;
+  blink?: number | undefined;
+  jawOpen?: number | undefined;
+  lookDown?: number | undefined;
   /** a fingertip is at the mouth */
-  handAtMouth?: boolean;
+  handAtMouth?: boolean | undefined;
 };
 
 export type Baseline = {
@@ -39,8 +39,8 @@ export type Baseline = {
   frameY: number;
   eyeDist: number;
   mouthGap: number;
-  browDown?: number;
-  squint?: number;
+  browDown?: number | undefined;
+  squint?: number | undefined;
 };
 
 export const RULES = {
