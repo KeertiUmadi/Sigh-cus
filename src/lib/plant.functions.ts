@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { guard } from "./guard";
 
 /**
  * Every AI call in this app goes through a server function so the keys stay
@@ -138,6 +139,7 @@ function fill(template: string, d: z.infer<typeof lineSchema>) {
 }
 
 export const plantLine = createServerFn({ method: "POST" })
+  .middleware([guard("line", 12, 300)])
   .inputValidator((input: unknown) => lineSchema.parse(input))
   .handler(async ({ data }): Promise<{ line: string; delivery: string; leaf: string }> => {
     const avoid = data.recentLines.length
@@ -203,6 +205,7 @@ const postureJsonSchema = {
  * sees, in Gerald's voice. On demand, so it costs one request per click.
  */
 export const judgePosture = createServerFn({ method: "POST" })
+  .middleware([guard("posture", 12, 300)])
   .inputValidator((input: unknown) => postureSchema.parse(input))
   .handler(async ({ data }) => {
     const payload = {
@@ -255,6 +258,7 @@ const vesselJsonSchema = {
  * person's face? One small request, only when the head-tilt check fires.
  */
 export const checkDrinkVessel = createServerFn({ method: "POST" })
+  .middleware([guard("vessel", 6, 150)])
   .inputValidator((input: unknown) => postureSchema.parse(input))
   .handler(async ({ data }): Promise<{ holdingDrink: boolean }> => {
     const json = await gatewayChat({
@@ -311,6 +315,7 @@ function toBase64(buffer: ArrayBuffer) {
  * voice in the UI if this throws, so a missing permission never kills the demo.
  */
 export const plantVoice = createServerFn({ method: "POST" })
+  .middleware([guard("voice", 8, 150)])
   .inputValidator((input: unknown) => voiceSchema.parse(input))
   .handler(
     async ({
