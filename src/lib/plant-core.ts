@@ -45,15 +45,15 @@ export type Baseline = {
 
 export const RULES = {
   /** "Slouch for more than 2 minutes, and the plant sighs." */
-  slouchMs: 10_000,
+  slouchMs: 5_000,
   /** no drink for this long -> thirst nag */
   thirstMs: 60_000,
   /** this much screen time -> eye-rest nag */
   screenMs: 60 * 60_000,
   /** face gone for this long -> abandonment nag */
-  awayMs: 10_000,
+  awayMs: 5_000,
   /** chin tipped up (mouth open, or chin way up) held this long counts as a drink */
-  drinkHoldMs: 1200,
+  drinkHoldMs: 700,
   /** a sip is one celebration, not one per frame */
   drinkCooldownMs: 20_000,
   /** the plant will not nag twice about the same thing inside this window */
@@ -66,17 +66,17 @@ export const RULES = {
   screenHit: 6,
   awayHit: 4,
   /** sitting up straight this long after a slouch nag counts as fixed */
-  uprightConfirmMs: 3000,
+  uprightConfirmMs: 400,
   fixedBoost: 8,
   drinkBoost: 14,
   backBoost: 6,
   /** mood regained per minute spent sitting up straight */
   uprightRecoveryPerMin: 3,
   /** face habits: how long each must last before Gerald says something */
-  habitMs: { frown: 5_000, stare: 10_000, close: 10_000, nails: 5_000, yawn: 5_000, phone: 20_000 },
+  habitMs: { frown: 5_000, stare: 5_000, close: 5_000, nails: 5_000, yawn: 5_000, phone: 5_000 },
   habitHit: 5,
   /** stopping a nagged habit for this long counts as fixed */
-  habitOkMs: 2000,
+  habitOkMs: 400,
   trailEveryMs: 5_000,
   trailMax: 400,
 } as const;
@@ -91,11 +91,11 @@ export const SENSITIVITY = {
   slouchFrameY: 0.07,
   slouchEyeRatio: 1.25,
   /** mouth this much more open than at rest */
-  drinkGapAdd: 0.15,
+  drinkGapAdd: 0.1,
   /** chin up: nose this much closer to the eye line than when calibrated */
-  drinkPitchRatio: 0.78,
+  drinkPitchRatio: 0.86,
   /** chin so far up that it counts even when the bottle hides the mouth */
-  drinkPitchHardRatio: 0.6,
+  drinkPitchHardRatio: 0.7,
 };
 
 export const HABITS = ["frown", "stare", "close", "nails", "yawn", "phone"] as const;
@@ -250,7 +250,8 @@ export function drinkSignals(r: Reading, b: Baseline) {
  */
 export function isDrink(r: Reading, b: Baseline) {
   const s = drinkSignals(r, b);
-  return s.chinUp && (s.mouthOpen || s.chinWayUp);
+  // a cup or hand at the mouth plus a chin tilt, or a big tilt on its own
+  return s.chinWayUp || (s.chinUp && (s.mouthOpen || !!r.handAtMouth));
 }
 
 /** Leaning in close to the screen, on its own (not part of a slouch). */
@@ -268,7 +269,7 @@ export function habitSignals(r: Reading, b: Baseline): Record<Habit, boolean> {
       ((r.browDown ?? 0) > (b.browDown ?? 0) + 0.3 || (r.squint ?? 0) > (b.squint ?? 0) + 0.35),
     stare: v && measured && (r.blink ?? 0) < 0.35,
     close: isClose(r, b),
-    nails: v && !!r.handAtMouth,
+    nails: v && !!r.handAtMouth && !drinkSignals(r, b).chinUp,
     yawn: v && (r.jawOpen ?? 0) > 0.55 && !isDrink(r, b),
     phone: v && (r.lookDown ?? 0) > 0.5 && !isSlouch(r, b),
   };
