@@ -201,6 +201,45 @@ be grudgingly impressed, not nice. Reply with JSON only.`,
     };
   });
 
+const vesselJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["holdingDrink"],
+  properties: { holdingDrink: { type: "boolean" } },
+};
+
+/**
+ * Second opinion on a sip: is a cup, bottle, mug or can held at or near the
+ * person's face? One small request, only when the head-tilt check fires.
+ */
+export const checkDrinkVessel = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => postureSchema.parse(input))
+  .handler(async ({ data }): Promise<{ holdingDrink: boolean }> => {
+    const json = await gatewayChat({
+      model: "google/gemini-3.5-flash",
+      stream: false,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Is the person in this webcam frame drinking, or holding a cup, mug, bottle, can or glass at or near their mouth? Answer true only if you can see such a container near the face or being tipped to drink. Reply with JSON only.",
+            },
+            { type: "image_url", image_url: { url: data.image } },
+          ],
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: "drink_check", strict: true, schema: vesselJsonSchema },
+      },
+    });
+    const raw = json.choices?.[0]?.message?.content;
+    if (!raw) throw new Error("No answer from the drink check.");
+    return { holdingDrink: Boolean((JSON.parse(raw) as { holdingDrink: boolean }).holdingDrink) };
+  });
+
 // Daniel: dry, British, human. Deadpan = fairly stable, modest style, slightly slow.
 const DANIEL = "onwK4e9ZLuTAKqWW03F9";
 const VOICES: Record<string, { id: string; stability: number; style: number; speed: number }> = {
