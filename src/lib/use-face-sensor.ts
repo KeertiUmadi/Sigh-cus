@@ -102,6 +102,7 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
     }
 
     setStatus("running");
+    void videoRef.current?.play().catch(() => undefined);
 
     const loop = () => {
       rafRef.current = requestAnimationFrame(loop);
