@@ -16,7 +16,7 @@ import {
   type PlantState,
   type Reading,
 } from "@/lib/plant-core";
-import { judgePosture, plantLine, plantVoice } from "@/lib/plant.functions";
+import { checkDrinkVessel, judgePosture, plantLine, plantVoice } from "@/lib/plant.functions";
 import { useFaceSensor } from "@/lib/use-face-sensor";
 
 const TEXT_ONLY = true;
@@ -109,6 +109,8 @@ function PlantApp() {
 
   const sensor = useFaceSensor(onReading);
   const { videoRef, start, stop, status, error, captureFrame } = sensor;
+  const captureRef = useRef(captureFrame);
+  captureRef.current = captureFrame;
 
   // hydrate persisted state
   useEffect(() => {
@@ -263,8 +265,41 @@ function PlantApp() {
       const reading =
         modeRef.current === "camera" ? readingRef.current : { ...demoRef.current, at: now };
       if (!reading) return;
-      const out = tick(stateRef.current, reading, dt, base);
+      const prev = stateRef.current;
+      const out = tick(prev, reading, dt, base);
       commit(out.state);
+      const sip = out.events.some((e) => e.kind === "drink");
+      if (sip && modeRef.current === "camera") {
+        // head tilt says "sip": ask Gemini to confirm there is a cup or bottle
+        const frame = captureRef.current?.();
+        const rest = out.events.filter((e) => e.kind !== "drink");
+        if (rest.length) void react(rest);
+        if (!frame) {
+          void react(out.events.filter((e) => e.kind === "drink"));
+          return;
+        }
+        void checkDrinkVessel({ data: { image: frame } })
+          .then((v) => v.holdingDrink)
+          .catch(() => true) // if the check fails, trust the head tilt
+          .then((ok) => {
+            if (ok) {
+              void react(out.events.filter((e) => e.kind === "drink"));
+              return;
+            }
+            const cur = stateRef.current;
+            commit({
+              ...cur,
+              drinkCount: prev.drinkCount,
+              drinkStreak: prev.drinkStreak,
+              mood: Math.min(cur.mood, prev.mood),
+              dryMs: prev.dryMs + dt,
+              slouchMs: prev.slouchMs,
+              lastDrinkAt: Date.now() - RULES.drinkCooldownMs + 5000,
+            });
+            setVoiceNote("Head tipped back, but Gemini saw no cup or bottle. Not counted.");
+          });
+        return;
+      }
       if (out.events.length) void react(out.events);
     }, 200);
     return () => window.clearInterval(id);
