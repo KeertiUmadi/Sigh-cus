@@ -11,7 +11,8 @@ const DELIVERIES = ["sigh", "scold", "gospel", "whisper"] as const;
 const LEAVES = ["wither", "perk", "droop"] as const;
 
 const lineSchema = z.object({
-  kind: z.enum(["slouch", "thirst", "screen", "away", "drink", "back", "fixed"]),
+  kind: z.enum(["slouch", "thirst", "screen", "away", "drink", "back", "fixed", "frown", "stare", "close", "nails", "yawn", "phone"]),
+  fixedOf: z.enum(["slouch", "frown", "stare", "close", "nails", "yawn", "phone"]).optional(),
   mood: z.number().min(0).max(100),
   slouchSeconds: z.number().min(0),
   dryMinutes: z.number().min(0),
@@ -47,6 +48,12 @@ const CONTEXT: Record<z.infer<typeof lineSchema>["kind"], string> = {
   away: "The user left. Whisper about abandonment and the dust settling on your leaves.",
   drink: "The user just drank water after you told them to. Give a dry, deadpan backhanded compliment — praise that is really an insult (e.g. impressed they managed basic survival).",
   fixed: "The user was slouching, you told them off, and they finally sat up straight. Confirm their posture is now correct, but as a dry backhanded compliment (e.g. astonished they remembered they have a spine).",
+  frown: "The user has been frowning or squinting at the screen for a while. Tell them to relax their face, deadpan (e.g. it's only a spreadsheet).",
+  stare: "The user has stared at the screen without blinking for ages. Remind them eyelids exist, dryly.",
+  close: "The user is leaning way too close to the screen. Tell them to back up, sarcastically.",
+  nails: "The user is biting their nails. Express flat disgust and tell them to stop.",
+  yawn: "The user keeps yawning. Suggest sleep with theatrical pity.",
+  phone: "The user has been looking down at their phone instead of working. Call it out, deadpan.",
   back: "The user came back. Whisper something passive-aggressive about how long that took.",
 };
 
@@ -90,7 +97,17 @@ async function gatewayChat(body: unknown) {
   return res.json() as Promise<{ choices: { message: { content: string } }[] }>;
 }
 
+const FIXED: Record<string, string> = {
+  frown: "The user finally stopped frowning and relaxed their face after you told them to. Confirm it with a backhanded compliment.",
+  stare: "The user finally blinked after you told them to. Confirm it with a backhanded compliment.",
+  close: "The user finally leaned back to a sane distance from the screen. Confirm it with a backhanded compliment.",
+  nails: "The user finally stopped biting their nails. Confirm it with a backhanded compliment.",
+  yawn: "The user stopped yawning. Confirm it with a backhanded compliment about looking marginally alive.",
+  phone: "The user put the phone down and looked back at the screen. Confirm it with a backhanded compliment.",
+};
+
 function fill(template: string, d: z.infer<typeof lineSchema>) {
+  if (d.kind === "fixed" && d.fixedOf && FIXED[d.fixedOf]) template = FIXED[d.fixedOf]!;
   return template
     .replace("{slouchSeconds}", String(Math.round(d.slouchSeconds)))
     .replace("{dryMinutes}", String(Math.round(d.dryMinutes)))

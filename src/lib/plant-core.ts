@@ -23,6 +23,14 @@ export type Reading = {
   eyeDist: number;
   /** mouth opening relative to eye distance */
   mouthGap: number;
+  /** face blendshapes 0..1 (camera only; missing = not measured) */
+  browDown?: number;
+  squint?: number;
+  blink?: number;
+  jawOpen?: number;
+  lookDown?: number;
+  /** a fingertip is at the mouth */
+  handAtMouth?: boolean;
 };
 
 export type Baseline = {
@@ -31,17 +39,19 @@ export type Baseline = {
   frameY: number;
   eyeDist: number;
   mouthGap: number;
+  browDown?: number;
+  squint?: number;
 };
 
 export const RULES = {
   /** "Slouch for more than 2 minutes, and the plant sighs." */
-  slouchMs: 120_000,
+  slouchMs: 10_000,
   /** no drink for this long -> thirst nag */
-  thirstMs: 45 * 60_000,
+  thirstMs: 60_000,
   /** this much screen time -> eye-rest nag */
   screenMs: 60 * 60_000,
   /** face gone for this long -> abandonment nag */
-  awayMs: 20_000,
+  awayMs: 10_000,
   /** chin tipped up (mouth open, or chin way up) held this long counts as a drink */
   drinkHoldMs: 1200,
   /** a sip is one celebration, not one per frame */
@@ -62,6 +72,11 @@ export const RULES = {
   backBoost: 6,
   /** mood regained per minute spent sitting up straight */
   uprightRecoveryPerMin: 3,
+  /** face habits: how long each must last before Gerald says something */
+  habitMs: { frown: 5_000, stare: 10_000, close: 10_000, nails: 5_000, yawn: 5_000, phone: 20_000 },
+  habitHit: 5,
+  /** stopping a nagged habit for this long counts as fixed */
+  habitOkMs: 2000,
   trailEveryMs: 5_000,
   trailMax: 400,
 } as const;
@@ -83,12 +98,15 @@ export const SENSITIVITY = {
   drinkPitchHardRatio: 0.6,
 };
 
-export type NagKind = "slouch" | "thirst" | "screen" | "away";
+export const HABITS = ["frown", "stare", "close", "nails", "yawn", "phone"] as const;
+export type Habit = (typeof HABITS)[number];
+export type NagKind = "slouch" | "thirst" | "screen" | "away" | Habit;
 export type EventKind = NagKind | "drink" | "back" | "fixed";
 export type Delivery = "sigh" | "scold" | "gospel" | "whisper";
 export type Leaf = "wither" | "perk" | "droop";
 
-export type PlantEvent = { kind: EventKind; at: number };
+/** of = which bad habit a fixed event confirms */
+export type PlantEvent = { kind: EventKind; at: number; of?: "slouch" | Habit };
 
 export const FLAVOR: Record<EventKind, { delivery: Delivery; leaf: Leaf }> = {
   slouch: { delivery: "sigh", leaf: "wither" },
@@ -98,6 +116,12 @@ export const FLAVOR: Record<EventKind, { delivery: Delivery; leaf: Leaf }> = {
   drink: { delivery: "gospel", leaf: "perk" },
   back: { delivery: "whisper", leaf: "perk" },
   fixed: { delivery: "whisper", leaf: "perk" },
+  frown: { delivery: "scold", leaf: "droop" },
+  stare: { delivery: "whisper", leaf: "droop" },
+  close: { delivery: "scold", leaf: "droop" },
+  nails: { delivery: "scold", leaf: "wither" },
+  yawn: { delivery: "sigh", leaf: "droop" },
+  phone: { delivery: "scold", leaf: "droop" },
 };
 
 export type TrailPoint = {
@@ -123,6 +147,10 @@ export type PlantState = {
   /** a slouch nag is outstanding, waiting for you to sit up */
   slouchNagged: boolean;
   uprightMs: number;
+  /** how long each face habit has been going on, and whether a nag awaits a fix */
+  habitMs?: Partial<Record<Habit, number>>;
+  habitOkMs?: Partial<Record<Habit, number>>;
+  habitNagged?: Partial<Record<Habit, boolean>>;
   lastNagAt: Partial<Record<NagKind, number>>;
   startedAt: number;
   lastTrailAt: number;
@@ -156,6 +184,9 @@ export function createState(at: number): PlantState {
     slouchCount: 0,
     slouchNagged: false,
     uprightMs: 0,
+    habitMs: {},
+    habitOkMs: {},
+    habitNagged: {},
     lastNagAt: {},
     startedAt: at,
     lastTrailAt: at,
@@ -180,6 +211,8 @@ export function calibrate(readings: Reading[]): Baseline {
     frameY: avg((r) => r.frameY),
     eyeDist: avg((r) => r.eyeDist),
     mouthGap: avg((r) => r.mouthGap),
+    browDown: avg((r) => r.browDown ?? 0),
+    squint: avg((r) => r.squint ?? 0),
   };
 }
 
@@ -218,6 +251,27 @@ export function drinkSignals(r: Reading, b: Baseline) {
 export function isDrink(r: Reading, b: Baseline) {
   const s = drinkSignals(r, b);
   return s.chinUp && (s.mouthOpen || s.chinWayUp);
+}
+
+/** Leaning in close to the screen, on its own (not part of a slouch). */
+export function isClose(r: Reading, b: Baseline) {
+  return r.faceVisible && r.eyeDist > b.eyeDist * SENSITIVITY.slouchEyeRatio && !isSlouch(r, b);
+}
+
+/** Which face habits are happening in this one reading. "stare" means no blink. */
+export function habitSignals(r: Reading, b: Baseline): Record<Habit, boolean> {
+  const v = r.faceVisible;
+  const measured = r.blink !== undefined;
+  return {
+    frown:
+      v &&
+      ((r.browDown ?? 0) > (b.browDown ?? 0) + 0.3 || (r.squint ?? 0) > (b.squint ?? 0) + 0.35),
+    stare: v && measured && (r.blink ?? 0) < 0.35,
+    close: isClose(r, b),
+    nails: v && !!r.handAtMouth,
+    yawn: v && (r.jawOpen ?? 0) > 0.55 && !isDrink(r, b),
+    phone: v && (r.lookDown ?? 0) > 0.5 && !isSlouch(r, b),
+  };
 }
 
 /** Count a sip: one celebration per cooldown window. Mutates s. */
@@ -295,6 +349,33 @@ export function tick(
       s.dryMs += dtMs;
     }
 
+    const hs = habitSignals(reading, baseline);
+    s.habitMs = { ...s.habitMs };
+    s.habitOkMs = { ...s.habitOkMs };
+    s.habitNagged = { ...s.habitNagged };
+    for (const h of HABITS) {
+      if (hs[h]) {
+        s.habitMs[h] = (s.habitMs[h] ?? 0) + dtMs;
+        s.habitOkMs[h] = 0;
+        if ((s.habitMs[h] ?? 0) >= RULES.habitMs[h] && canNag(s, h, at)) {
+          events.push(event(h, at));
+          s.lastNagAt[h] = at;
+          s.habitNagged[h] = true;
+          s.mood -= RULES.habitHit;
+        }
+      } else {
+        s.habitMs[h] = 0;
+        s.habitOkMs[h] = (s.habitOkMs[h] ?? 0) + dtMs;
+        // a blink ends a stare at once; everything else must stop for a moment
+        const okFor = h === "stare" ? 0 : RULES.habitOkMs;
+        if (s.habitNagged[h] && (s.habitOkMs[h] ?? 0) >= okFor) {
+          s.habitNagged[h] = false;
+          events.push({ kind: "fixed", at, of: h });
+          s.mood += RULES.fixedBoost / 2;
+        }
+      }
+    }
+
     if (isSlouch(reading, baseline)) {
       s.slouchMs += dtMs;
       s.uprightMs = 0;
@@ -303,7 +384,7 @@ export function tick(
       s.uprightMs += dtMs;
       if (s.slouchNagged && s.uprightMs >= RULES.uprightConfirmMs) {
         s.slouchNagged = false;
-        events.push(event("fixed", at));
+        events.push({ kind: "fixed", at, of: "slouch" });
         s.mood += RULES.fixedBoost;
       }
       s.mood += (dtMs / 60_000) * RULES.uprightRecoveryPerMin;
