@@ -20,6 +20,7 @@ const lineSchema = z.object({
   drinks: z.number().int().min(0),
   streak: z.number().int().min(0),
   recentLines: z.array(z.string().max(400)).max(12).default([]),
+  memories: z.array(z.string().max(300)).max(8).default([]),
 });
 
 const lineJsonSchema = {
@@ -132,6 +133,7 @@ export const plantLine = createServerFn({ method: "POST" })
           content: `${fill(CONTEXT[data.kind], data)}
 Plant mood is ${Math.round(data.mood)} out of 100 (lower means you are suffering more, so be
 more dramatic when it is low). Water count: ${data.drinks}. Current good-habit streak: ${data.streak}.
+${data.memories.length ? `Things you remember about this person from past sessions (reference one only if it fits, e.g. "again?"): ${JSON.stringify(data.memories)}` : ""}
 Style for this line: ${ANGLES[Math.floor(Math.random() * ANGLES.length)]}
 ${avoid}
 Reply with JSON only.`,

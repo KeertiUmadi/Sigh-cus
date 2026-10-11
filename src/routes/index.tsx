@@ -19,6 +19,7 @@ import {
   type PlantState,
   type Reading,
 } from "@/lib/plant-core";
+import { recallHabits, rememberHabit } from "@/lib/memory.functions";
 import { checkDrinkVessel, judgePosture, plantLine, plantVoice } from "@/lib/plant.functions";
 import { useFaceSensor } from "@/lib/use-face-sensor";
 
@@ -337,8 +338,10 @@ function PlantApp() {
             drinks: s.drinkCount,
             streak: s.drinkStreak,
             recentLines: recentLines.current,
+            memories: memories.current,
           },
         });
+        void remember(ev);
         const nextLeaf = out.leaf as "wither" | "perk" | "droop";
         setLeaf(nextLeaf);
         setPulse((p) => p + 1);
