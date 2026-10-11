@@ -30,10 +30,10 @@ const MAIN: Item[] = [
 
 const MLH: Item[] = [
   { name: "Gemini API", note: "Writes Gerald's guilt lines and judges posture from camera frames.", status: "Working" },
-  { name: "ElevenLabs", note: "Gerald's voice (Sigma Centauri). Browser voice speaks until the key permissions are fixed.", status: "Waiting on key permissions" },
+  { name: "ElevenLabs", note: "Gerald's voice (Daniel, dry British). The key works; the app runs text-only for now until we lock in the lines.", status: "Key working, voice paused" },
   { name: "Backboard.io", note: "Planned: memory so Gerald remembers your past slouching.", status: "Waiting on API key" },
   { name: "Tiger Data", note: "Planned: store guilt streaks long term.", status: "Not started" },
-  { name: "GoDaddy Registry", note: "Optional side prize for a domain name. No domain bought yet.", status: "Optional" },
+  { name: "GoDaddy Registry", note: "Domain sigh-cus.design claimed with the event promo code and connected to the app.", status: "Done" },
   { name: "Solana", note: "Doesn't fit the idea.", status: "Dropped" },
   { name: "Vultr", note: "Doesn't fit the idea.", status: "Dropped" },
 ];
@@ -67,6 +67,25 @@ function TracksPage() {
       <p className="mt-2 text-muted-foreground">
         CodeRED Orion, 24 hours. Here is what we are going for and how far along each piece is.
       </p>
+      <div className="mt-4 rounded-lg border border-border bg-card p-4 text-sm">
+        <p>
+          App:{" "}
+          <a href="https://sigh-cus.design" className="underline">
+            sigh-cus.design
+          </a>{" "}
+          (also works at{" "}
+          <a href="https://www.sigh-cus.design" className="underline">
+            www.sigh-cus.design
+          </a>
+          )
+        </p>
+        <p className="mt-1">
+          Code:{" "}
+          <a href="https://github.com/KeertiUmadi/Sigh-cus" className="underline">
+            github.com/KeertiUmadi/Sigh-cus
+          </a>
+        </p>
+      </div>
       <Section title="CodeRED Orion" items={MAIN} />
       <Section title="MLH challenges" items={MLH} />
     </main>
