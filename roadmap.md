@@ -19,4 +19,5 @@
 
 - [x] Snooze: pause Gerald's comments for a while (keep counting)
 - [x] Fix sip detection (chin-up sign was inverted) + manual "I just drank water" button
-- [ ] Claim a free domain via GoDaddy Registry (mlh.link/godaddyregistry) — blocked: needs the user to claim it with the event promo code (the user may share the code); then connect it in Project Settings → Domains
+- [x] Claim a free domain via GoDaddy Registry (mlh.link/godaddyregistry) — claimed through Porkbun: sigh-cus.design is registered (no hosting plan picked; the hosting upsell screen was skipped on purpose)
+- [ ] Connect sigh-cus.design to the app — next: Project Settings → Domains → Connect Domain, add both sigh-cus.design and www, and set the records Porkbun shows; tell the user not to buy Porkbun hosting
