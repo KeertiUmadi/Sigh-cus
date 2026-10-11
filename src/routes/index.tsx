@@ -491,6 +491,7 @@ function PlantApp() {
                 >
                   {status === "loading" ? "Opening camera…" : "Start the camera"}
                 </button>
+                <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={beginDemo}
                   className="rounded-xl border border-border px-5 py-2.5 font-medium hover:border-primary"
@@ -501,11 +502,12 @@ function PlantApp() {
                   variant="outline"
                   onClick={() => setExpressionStep(expressionStep === null ? 0 : null)}
                   aria-pressed={expressionStep !== null}
-                  className="h-auto min-h-11 border-border px-5 py-2.5 hover:border-primary"
+                  className="h-auto min-h-11 border-border bg-card px-5 py-2.5 text-foreground hover:border-primary hover:bg-secondary hover:text-foreground"
                 >
                   {expressionStep === null ? <Drama aria-hidden="true" /> : <Square aria-hidden="true" />}
                   {expressionStep === null ? "Preview expressions" : "Stop expressions"}
                 </Button>
+                </div>
               </div>
             )}
 
