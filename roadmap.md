@@ -20,4 +20,4 @@
 - [x] Snooze: pause Gerald's comments for a while (keep counting)
 - [x] Fix sip detection (chin-up sign was inverted) + manual "I just drank water" button
 - [x] Claim a free domain via GoDaddy Registry (mlh.link/godaddyregistry) — claimed through Porkbun: sigh-cus.design is registered (no hosting plan picked; the hosting upsell screen was skipped on purpose)
-- [ ] Connect sigh-cus.design to the app — next: Project Settings → Domains → Connect Domain, add both sigh-cus.design and www, and set the records Porkbun shows; tell the user not to buy Porkbun hosting
+- [ ] Connect sigh-cus.design to the app — records already live at Porkbun (A 185.158.133.1 + the _lovable proof text both verified); one click left: Project Settings → Domains → Check status, then add www the same way if they want it to resolve
