@@ -19,3 +19,4 @@
 
 - [x] Snooze: pause Gerald's comments for a while (keep counting)
 - [x] Fix sip detection (chin-up sign was inverted) + manual "I just drank water" button
+- [ ] Claim a free domain via GoDaddy Registry (mlh.link/godaddyregistry) — blocked: needs the user to claim it with the event promo code (the user may share the code); then connect it in Project Settings → Domains
