@@ -1,5 +1,8 @@
 # Sigh-cus — build roadmap
 
+- [x] Restore camera button contrast and remove demo invitations; verified readable camera label in preview and public-host layout with no demo text or runtime errors.
+- [x] Request publication of the camera label and wording corrections; synchronize the changed files to both GitHub copies, preserving existing UI and detection changes.
+
 - [x] Add varied incredulous reactions and conversational voice settings; 26 tests pass, a live text response and correction verified, demo entry absent on the public host and available locally. Preview only; audio listening check deferred to avoid spending ElevenLabs credits.
 
 - [x] Rename trigger settings to “Manage My Disappointment” and fix missed blinks and phone-use signals — 25 tests passed; verified settings, phone nag and immediate correction in demo mode; real-camera verification and publication still pending

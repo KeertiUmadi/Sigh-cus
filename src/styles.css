@@ -501,7 +501,7 @@ button:disabled {
 .start-actions button:first-child {
   flex: 1;
 }
-.start-actions button:last-child {
+.start-actions button:nth-child(2) {
   background: var(--background);
 }
 .privacy-note {

@@ -768,14 +768,14 @@ function PlantApp() {
                 ? "Try a habit below and see how Gerald takes it. He has feelings about all of them."
                 : mode === "camera"
                   ? "Sit comfortably, calibrate your posture, and let Gerald keep you company."
-                  : "Turn on your camera and Gerald will look out for you. Or take him for a spin in demo mode."}
+                  : "Turn on your camera and Gerald will look out for you."}
             </p>
             {(!active ||
               status === "denied" ||
               status === "failed" ||
               status === "unsupported") && (
               <div className="start-actions">
-                <button
+                <Button
                   onClick={beginCamera}
                   disabled={status === "loading"}
                   className="cursor-pointer rounded-xl bg-primary px-5 py-2.5 font-medium text-primary-foreground transition hover:opacity-90 hover:ring-2 hover:ring-primary/40 disabled:cursor-wait disabled:opacity-50"
@@ -783,21 +783,22 @@ function PlantApp() {
                   <Camera size={17} />
                   {status === "loading" ? "Opening camera…" : "Start the camera"}
                   <ArrowUpRight size={16} />
-                </button>
+                </Button>
                 {showDemo && (
-                  <button
+                  <Button
                     onClick={beginDemo}
+                    variant="outline"
                     className="rounded-xl border border-border px-5 py-2.5 font-medium hover:border-primary"
                   >
                     <Play size={15} /> Run in demo mode
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
             {!active && (
               <p className="privacy-note">
                 <ShieldCheck size={14} />
-                Camera starts only when you choose. Demo needs no camera.
+                Camera starts only when you choose.
               </p>
             )}
 
