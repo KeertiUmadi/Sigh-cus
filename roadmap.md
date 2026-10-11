@@ -18,7 +18,7 @@
 - [x] Hand the user a zip of the project files — saved as guilt-trip-plant.zip in Files
 - [x] Publish the app so anyone with a link can open it — live at https://sigh-cus.design (public visibility)
 - [x] Rename the app to Sigh-cus everywhere — page title, heading, tracks page, README, and the address itself
-- [ ] Refresh the README on GitHub — the name is already correct there, but its rules table still lists old timings (2-minute slouch, 45-minute thirst, 20-second away) and 14 tests, while the app now uses 10-second slouch, 1-minute thirst, the six new habits and 20 tests
+- [x] Refresh the README on GitHub — done in both repos (KeertiUmadi and ShubhangiPurohit-dev): current timings, all ten habits with how each is confirmed fixed, 20 tests, voice-is-text-only note; verified by reading the copies back. Note: pushing straight to Keerti's repo triggered Lovable's "a repository push replaced your Lovable work" banner and rolled back one roadmap line — future README edits go through the project so they sync normally
 
 - [x] Snooze: pause Gerald's comments for a while (keep counting)
 - [x] Fix sip detection (chin-up sign was inverted) + manual "I just drank water" button
