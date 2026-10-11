@@ -18,8 +18,14 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
   const landmarkerRef = useRef<{
     detectForVideo: (v: HTMLVideoElement, t: number) => {
       faceLandmarks?: { x: number; y: number }[][];
+      faceBlendshapes?: { categories: { categoryName: string; score: number }[] }[];
     };
   } | null>(null);
+  const handsRef = useRef<{
+    detectForVideo: (v: HTMLVideoElement, t: number) => { landmarks?: { x: number; y: number }[][] };
+  } | null>(null);
+  const handAtMouthRef = useRef(false);
+  const handTickRef = useRef(0);
   const streamRef = useRef<MediaStream | null>(null);
   const callbackRef = useRef(onReading);
   const cancelRef = useRef<() => void>(() => undefined);
@@ -97,12 +103,30 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
           },
           runningMode: "VIDEO",
           numFaces: 1,
+          outputFaceBlendshapes: true,
         });
       try {
         landmarkerRef.current = await make("GPU");
       } catch {
         landmarkerRef.current = await make("CPU");
       }
+      // hands are only for nail-biting; if they fail to load, everything else still works
+      void import("@mediapipe/tasks-vision")
+        .then(({ HandLandmarker }) =>
+          HandLandmarker.createFromOptions(fileset, {
+            baseOptions: {
+              modelAssetPath:
+                "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+              delegate: "GPU",
+            },
+            runningMode: "VIDEO",
+            numHands: 2,
+          }),
+        )
+        .then((h) => {
+          handsRef.current = h;
+        })
+        .catch(() => undefined);
     } catch (e) {
       setStatus("failed");
       setError(
@@ -163,6 +187,31 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
       const eyeDist = Math.hypot(px(133) - px(33), py(133) - py(33));
       const mouthGap = (py(14) - py(13)) / (eyeDist || 1);
 
+      const shapes = new Map(
+        (results.faceBlendshapes?.[0]?.categories ?? []).map((c) => [c.categoryName, c.score]),
+      );
+      const both = (a: string) =>
+        ((shapes.get(`${a}Left`) ?? 0) + (shapes.get(`${a}Right`) ?? 0)) / 2;
+
+      // hands every ~0.4 s: is a fingertip at the mouth?
+      const hands = handsRef.current;
+      if (hands && now - handTickRef.current > 400) {
+        handTickRef.current = now;
+        try {
+          const hr = hands.detectForVideo(v, now);
+          const mx = (px(13) + px(14)) / 2;
+          const my = (py(13) + py(14)) / 2;
+          handAtMouthRef.current = (hr.landmarks ?? []).some((hand) =>
+            [4, 8, 12, 16, 20].some((i) => {
+              const p = hand[i];
+              return p && Math.hypot(p.x * W - mx, p.y * H - my) < eyeDist * 0.9;
+            }),
+          );
+        } catch {
+          handAtMouthRef.current = false;
+        }
+      }
+
       callbackRef.current({
         at,
         faceVisible: eyeDist > 8,
@@ -170,6 +219,12 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
         frameY: eyeMidY / H,
         eyeDist: eyeDist / W,
         mouthGap,
+        browDown: both("browDown"),
+        squint: both("eyeSquint"),
+        blink: shapes.size ? Math.max(shapes.get("eyeBlinkLeft") ?? 0, shapes.get("eyeBlinkRight") ?? 0) : undefined,
+        jawOpen: shapes.get("jawOpen"),
+        lookDown: both("eyeLookDown"),
+        handAtMouth: handAtMouthRef.current,
       });
     };
     loop();
