@@ -78,15 +78,21 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
       const fileset = await FilesetResolver.forVisionTasks(
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.0/wasm",
       );
-      landmarkerRef.current = await FaceLandmarker.createFromOptions(fileset, {
-        baseOptions: {
-          modelAssetPath:
-            "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-          delegate: "GPU",
-        },
-        runningMode: "VIDEO",
-        numFaces: 1,
-      });
+      const make = (delegate: "GPU" | "CPU") =>
+        FaceLandmarker.createFromOptions(fileset, {
+          baseOptions: {
+            modelAssetPath:
+              "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+            delegate,
+          },
+          runningMode: "VIDEO",
+          numFaces: 1,
+        });
+      try {
+        landmarkerRef.current = await make("GPU");
+      } catch {
+        landmarkerRef.current = await make("CPU");
+      }
     } catch (e) {
       setStatus("failed");
       setError(

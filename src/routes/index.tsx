@@ -286,8 +286,9 @@ function PlantApp() {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(() => undefined);
     }
-    await start();
     setMode("camera");
+    await new Promise((r) => setTimeout(r, 0));
+    await start();
   }
 
   function beginDemo() {
@@ -429,7 +430,7 @@ function PlantApp() {
         {/* controls + evidence */}
         <section className="space-y-5">
           <div className="rounded-3xl border bg-card p-5">
-            {!active && (
+            {(!active || status === "denied" || status === "failed" || status === "unsupported") && (
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={beginCamera}
