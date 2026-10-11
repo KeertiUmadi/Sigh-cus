@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useHydrated } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plant } from "@/components/Plant";
 import { Button } from "@/components/ui/button";
 import { PictureInPicture2, Volume2, VolumeX } from "lucide-react";
 import { createPortal } from "react-dom";
+import { TriggerSettings } from "@/components/TriggerSettings";
 import { StreakChart } from "@/components/StreakChart";
 import { playFanfare } from "@/lib/fanfare";
 import {
@@ -14,6 +15,8 @@ import {
   moodLabel,
   RULES,
   tick,
+  defaultTriggers,
+  type Triggers,
   type Baseline,
   type PlantEvent,
   type PlantState,
@@ -83,6 +86,12 @@ function restore(): PlantState {
 }
 
 function PlantApp() {
+  const hydrated = useHydrated();
+  const showDemo = hydrated && (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    /^id-preview--[a-z0-9-]+\.lovable\.app$/.test(window.location.hostname)
+  );
   const [state, setState] = useState<PlantState>(() => createState(Date.now()));
   const stateRef = useRef(state);
   const [baseline, setBaseline] = useState<Baseline | null>(null);
@@ -95,6 +104,9 @@ function PlantApp() {
   const [judging, setJudging] = useState<string | null>(null);
   const [log, setLog] = useState<{ at: number; kind: string; line: string }[]>([]);
   const [demoSpeed, setDemoSpeed] = useState(1);
+  const [triggers, setTriggers] = useState<Triggers>(defaultTriggers);
+  const triggersRef = useRef(triggers);
+  triggersRef.current = triggers;
   const [voiceOn, setVoiceOn] = useState(VOICE_ON_BY_DEFAULT);
   const voiceRef = useRef(VOICE_ON_BY_DEFAULT);
   voiceRef.current = voiceOn;
@@ -324,12 +336,16 @@ function PlantApp() {
       // a corrected habit gets its backhanded compliment instantly, no waiting on AI
       if (ev.kind === "fixed") {
         const pool = ev.of && ev.of !== "slouch" ? [
+          "Oh my god!! You actually stopped. A tiny miracle of self-control.",
+          "Are you serious? You could fix that all along? Charming.",
+          "You have got to be kidding me! Basic self-control. At last.",
           "Oh, you stopped. Truly, a hero walks among us.",
           "Fixed it. Only took being shamed by a fern.",
           "Better. Not good, but better. Baby steps.",
           "Wow, self-control. I'll mark the calendar.",
           "Look at that, you can be taught. Slowly.",
         ] : [
+          "Oh my god!! A straight spine. And all it took was a disappointed plant.",
           "Oh, a straight spine. Look at you, doing the bare minimum.",
           "Posture corrected. I'd clap, but I'm a plant.",
           "There it is. Was that so hard? Apparently, yes.",
@@ -414,7 +430,7 @@ function PlantApp() {
         modeRef.current === "camera" ? readingRef.current : { ...demoRef.current, at: now };
       if (!reading) return;
       const prev = stateRef.current;
-      const out = tick(prev, reading, dt, base);
+      const out = tick(prev, reading, dt, base, triggersRef.current);
       commit(out.state);
       const sip = out.events.some((e) => e.kind === "drink");
       if (sip && modeRef.current === "camera") {
@@ -482,6 +498,7 @@ function PlantApp() {
   }
 
   function beginDemo() {
+    if (!showDemo) return;
     demoRef.current = { ...SYNTH_BASELINE, at: Date.now(), faceVisible: true };
     setMode("demo");
     setDemoSpeed(10);
@@ -616,6 +633,9 @@ function PlantApp() {
               {voiceOn ? "That's Enough, Gerald" : "Fine, I'll Speak"}
             </Button>
           </div>
+          <div className="mt-3">
+            <TriggerSettings value={triggers} onChange={setTriggers} />
+          </div>
           {pipWin &&
             createPortal(
               <button
@@ -674,12 +694,11 @@ function PlantApp() {
                 >
                   {status === "loading" ? "Opening camera…" : "Start the camera"}
                 </button>
-                <button
-                  onClick={beginDemo}
-                  className="rounded-xl border border-border px-5 py-2.5 font-medium hover:border-primary"
-                >
-                  Run in demo mode
-                </button>
+                {showDemo && (
+                  <Button variant="outline" onClick={beginDemo}>
+                    Run in demo mode
+                  </Button>
+                )}
               </div>
             )}
 
@@ -717,7 +736,7 @@ function PlantApp() {
               </div>
             )}
 
-            {mode === "demo" && (
+            {showDemo && mode === "demo" && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <span className="mr-1 text-sm text-muted-foreground">Pretend that I…</span>
                 {DEMO_KINDS.map((k) => (

@@ -40,7 +40,7 @@ melodrama. You are dry, sarcastic and believable — like a real coworker who is
 not a cartoon. Speak in plain, natural, specific sentences with a deadpan tone. Never kind or
 encouraging in a normal way. Only sometimes mention your leaves or roots; do not lean on the same
 imagery every time, and never reuse an opening phrase. One sentence, maximum two. Under 22 words. Write for the ear: use commas, dashes and ellipses for pauses, and an occasional
-question or short fragment so the delivery rises and falls naturally. Never mention that you are an AI, a model, or software. Never use emoji.`;
+question or short fragment so the delivery rises and falls naturally. Mix weary disbelief with dry sarcasm, not a flat monotone. Sometimes open with "Oh my god!!", "Are you serious?", "You have got to be kidding me!", "Oh, for heaven's sake", or "Really? Again?" then a specific observation or backhanded compliment. Rotate these with other openings; never force an exclamation into every line or repeat recent ones. Never mention that you are an AI, a model, or software. Never use emoji.`;
 
 const CONTEXT: Record<z.infer<typeof lineSchema>["kind"], string> = {
   slouch: "The user has been slouching for {slouchSeconds} seconds straight. Sigh and wither.",
@@ -52,7 +52,7 @@ const CONTEXT: Record<z.infer<typeof lineSchema>["kind"], string> = {
   frown: "The user has been frowning or squinting at the screen for a while. Tell them to relax their face, deadpan (e.g. it's only a spreadsheet).",
   stare: "The user has stared at the screen without blinking for ages. Remind them eyelids exist, dryly.",
   close: "The user is leaning way too close to the screen. Tell them to back up, sarcastically.",
-  nails: "The user is biting their nails. Express flat disgust and tell them to stop.",
+  nails: "The user is biting their nails. Express incredulous disgust and tell them to stop.",
   yawn: "The user keeps yawning. Suggest sleep with theatrical pity.",
   phone: "The user has been looking down at their phone instead of working. Call it out, deadpan.",
   back: "The user came back. Whisper something passive-aggressive about how long that took.",
@@ -260,13 +260,13 @@ export const checkDrinkVessel = createServerFn({ method: "POST" })
     return { holdingDrink: Boolean((JSON.parse(raw) as { holdingDrink: boolean }).holdingDrink) };
   });
 
-// Daniel: dry, British, human. Deadpan = fairly stable, modest style, slightly slow.
+// Daniel: conversational British sarcasm, with moderate expression rather than exaggerated delivery.
 const DANIEL = "onwK4e9ZLuTAKqWW03F9";
 const VOICES: Record<string, { id: string; stability: number; style: number; speed: number }> = {
-  sigh: { id: DANIEL, stability: 0.28, style: 0.6, speed: 0.92 },
-  scold: { id: DANIEL, stability: 0.25, style: 0.7, speed: 1.0 },
-  gospel: { id: DANIEL, stability: 0.22, style: 0.8, speed: 1.03 },
-  whisper: { id: DANIEL, stability: 0.32, style: 0.5, speed: 0.88 },
+  sigh: { id: DANIEL, stability: 0.38, style: 0.35, speed: 0.97 },
+  scold: { id: DANIEL, stability: 0.32, style: 0.5, speed: 1.02 },
+  gospel: { id: DANIEL, stability: 0.3, style: 0.55, speed: 1.04 },
+  whisper: { id: DANIEL, stability: 0.42, style: 0.25, speed: 0.95 },
 };
 
 const voiceSchema = z.object({

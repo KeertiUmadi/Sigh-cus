@@ -25,6 +25,8 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
     detectForVideo: (v: HTMLVideoElement, t: number) => { landmarks?: { x: number; y: number }[][] };
   } | null>(null);
   const handAtMouthRef = useRef(false);
+  const handBelowFaceRef = useRef(false);
+  const lastBlinkAtRef = useRef<number | undefined>(undefined);
   const handTickRef = useRef(0);
   const streamRef = useRef<MediaStream | null>(null);
   const callbackRef = useRef(onReading);
@@ -51,6 +53,10 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
 
   const start = useCallback(async () => {
     setError(null);
+    lastBlinkAtRef.current = undefined;
+    handAtMouthRef.current = false;
+    handBelowFaceRef.current = false;
+    lastAtRef.current = 0;
 
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       setStatus("unsupported");
@@ -156,7 +162,7 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
       if (!v || !lm || v.readyState < 2) return;
 
       const now = performance.now();
-      if (now - lastAtRef.current < 200) return; // ~5 readings a second
+      if (now - lastAtRef.current < 50) return; // ~20 Hz: brief blinks were missed at 5 Hz
       lastAtRef.current = now;
 
       const results = lm.detectForVideo(v, now);
@@ -192,6 +198,10 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
       );
       const both = (a: string) =>
         ((shapes.get(`${a}Left`) ?? 0) + (shapes.get(`${a}Right`) ?? 0)) / 2;
+      const blink = shapes.has("eyeBlinkLeft") || shapes.has("eyeBlinkRight")
+        ? Math.max(shapes.get("eyeBlinkLeft") ?? 0, shapes.get("eyeBlinkRight") ?? 0)
+        : undefined;
+      if (blink !== undefined && blink >= 0.2) lastBlinkAtRef.current = at;
 
       // hands every ~0.4 s: is a fingertip at the mouth?
       const hands = handsRef.current;
@@ -207,8 +217,14 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
               return p && Math.hypot(p.x * W - mx, p.y * H - my) < eyeDist * 0.9;
             }),
           );
+          handBelowFaceRef.current = (hr.landmarks ?? []).some((hand) => {
+            const palm = hand[9];
+            return palm && palm.y * H > my + eyeDist * 0.5 &&
+              Math.abs(palm.x * W - mx) < eyeDist * 3;
+          });
         } catch {
           handAtMouthRef.current = false;
+          handBelowFaceRef.current = false;
         }
       }
 
@@ -221,10 +237,12 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
         mouthGap,
         browDown: both("browDown"),
         squint: both("eyeSquint"),
-        blink: shapes.size ? Math.max(shapes.get("eyeBlinkLeft") ?? 0, shapes.get("eyeBlinkRight") ?? 0) : undefined,
+        blink,
+        lastBlinkAt: lastBlinkAtRef.current,
         jawOpen: shapes.get("jawOpen"),
         lookDown: both("eyeLookDown"),
         handAtMouth: handAtMouthRef.current,
+        handBelowFace: handBelowFaceRef.current,
       });
     };
     loop();

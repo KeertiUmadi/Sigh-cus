@@ -27,10 +27,14 @@ export type Reading = {
   browDown?: number | undefined;
   squint?: number | undefined;
   blink?: number | undefined;
+  /** Latest observed blink, latched by the camera so the slower UI tick cannot miss it. */
+  lastBlinkAt?: number | undefined;
   jawOpen?: number | undefined;
   lookDown?: number | undefined;
   /** a fingertip is at the mouth */
   handAtMouth?: boolean | undefined;
+  /** A hand held below the face supports the looking-down phone-use inference. */
+  handBelowFace?: boolean | undefined;
 };
 
 export type Baseline = {
@@ -157,6 +161,32 @@ export type PlantState = {
   trail: TrailPoint[];
 };
 
+/** Per-trigger user settings: off = never monitored, ms = how long before Gerald speaks. */
+export type TriggerSetting = { on: boolean; ms: number };
+export type Triggers = Record<NagKind, TriggerSetting>;
+export const TRIGGER_KINDS: NagKind[] = ["slouch", "thirst", "screen", "away", ...HABITS];
+export const TRIGGER_LABELS: Record<NagKind, string> = {
+  slouch: "Slouching",
+  thirst: "Not drinking water",
+  screen: "Screen time",
+  away: "Walking away",
+  frown: "Frowning / squinting",
+  stare: "Staring without blinking",
+  close: "Leaning too close",
+  nails: "Biting nails",
+  yawn: "Yawning",
+  phone: "Using your phone",
+};
+export function defaultTriggers(): Triggers {
+  const t = {} as Triggers;
+  t.slouch = { on: true, ms: RULES.slouchMs };
+  t.thirst = { on: true, ms: RULES.thirstMs };
+  t.screen = { on: true, ms: RULES.screenMs };
+  t.away = { on: true, ms: RULES.awayMs };
+  for (const h of HABITS) t[h] = { on: true, ms: RULES.habitMs[h] };
+  return t;
+}
+
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
 }
@@ -267,11 +297,15 @@ export function habitSignals(r: Reading, b: Baseline): Record<Habit, boolean> {
     frown:
       v &&
       ((r.browDown ?? 0) > (b.browDown ?? 0) + 0.3 || (r.squint ?? 0) > (b.squint ?? 0) + 0.35),
-    stare: v && measured && (r.blink ?? 0) < 0.35,
+    stare: v && measured && (r.blink ?? 0) < 0.2 &&
+      !(r.lastBlinkAt !== undefined && r.at >= r.lastBlinkAt && r.at - r.lastBlinkAt <= 400),
     close: isClose(r, b),
     nails: v && !!r.handAtMouth && !drinkSignals(r, b).chinUp,
     yawn: v && (r.jawOpen ?? 0) > 0.55 && !isDrink(r, b),
-    phone: v && (r.lookDown ?? 0) > 0.5 && !isSlouch(r, b),
+    // Looking down at a phone often also drops the head: slouch must not veto it.
+    // This is a posture inference, not object recognition.
+    phone: v && ((r.lookDown ?? 0) > 0.35 ||
+      (!!r.handBelowFace && r.pitch > b.pitch * SENSITIVITY.slouchPitchRatio)),
   };
 }
 
@@ -313,7 +347,9 @@ export function tick(
   reading: Reading,
   dtMs: number,
   baseline: Baseline,
+  triggers: Triggers = defaultTriggers(),
 ): { state: PlantState; events: PlantEvent[] } {
+  const T = triggers;
   const events: PlantEvent[] = [];
   const s: PlantState = { ...state, lastNagAt: { ...state.lastNagAt } };
   const at = reading.at;
@@ -323,14 +359,14 @@ export function tick(
 
   if (!reading.faceVisible) {
     s.awayMs += dtMs;
-    if (s.awayMs >= RULES.awayMs && canNag(s, "away", at)) {
+    if (T.away.on && s.awayMs >= T.away.ms && canNag(s, "away", at)) {
       events.push(event("away", at));
       s.lastNagAt.away = at;
       s.mood -= RULES.awayHit;
       s.awayMs = 0;
     }
   } else {
-    const wasGone = s.awayMs >= RULES.awayMs;
+    const wasGone = T.away.on && s.awayMs >= T.away.ms;
     s.awayMs = 0;
     if (wasGone) {
       events.push(event("back", at));
@@ -358,10 +394,15 @@ export function tick(
     s.habitOkMs = { ...s.habitOkMs };
     s.habitNagged = { ...s.habitNagged };
     for (const h of HABITS) {
+      if (!T[h].on) {
+        s.habitMs[h] = 0;
+        s.habitNagged[h] = false;
+        continue;
+      }
       if (hs[h]) {
         s.habitMs[h] = (s.habitMs[h] ?? 0) + dtMs;
         s.habitOkMs[h] = 0;
-        if ((s.habitMs[h] ?? 0) >= RULES.habitMs[h] && canNag(s, h, at)) {
+        if ((s.habitMs[h] ?? 0) >= T[h].ms && canNag(s, h, at)) {
           events.push(event(h, at));
           s.lastNagAt[h] = at;
           s.habitNagged[h] = true;
@@ -380,7 +421,7 @@ export function tick(
       }
     }
 
-    if (isSlouch(reading, baseline)) {
+    if (T.slouch.on && isSlouch(reading, baseline)) {
       s.slouchMs += dtMs;
       s.uprightMs = 0;
     } else {
@@ -398,7 +439,7 @@ export function tick(
   // Slouch and thirst timers keep growing after a nag, so an ongoing slouch
   // earns a fresh, increasingly unhinged line every cooldown window instead
   // of the plant silently forgiving you.
-  if (s.slouchMs >= RULES.slouchMs && canNag(s, "slouch", at)) {
+  if (T.slouch.on && s.slouchMs >= T.slouch.ms && canNag(s, "slouch", at)) {
     events.push(event("slouch", at));
     s.lastNagAt.slouch = at;
     s.mood -= RULES.slouchHit;
@@ -407,14 +448,14 @@ export function tick(
     s.drinkStreak = 0;
   }
 
-  if (s.dryMs >= RULES.thirstMs && canNag(s, "thirst", at)) {
+  if (T.thirst.on && s.dryMs >= T.thirst.ms && canNag(s, "thirst", at)) {
     events.push(event("thirst", at));
     s.lastNagAt.thirst = at;
     s.mood -= RULES.thirstHit;
     s.drinkStreak = 0;
   }
 
-  if (s.screenMs >= RULES.screenMs && canNag(s, "screen", at)) {
+  if (T.screen.on && s.screenMs >= T.screen.ms && canNag(s, "screen", at)) {
     events.push(event("screen", at));
     s.lastNagAt.screen = at;
     s.mood -= RULES.screenHit;

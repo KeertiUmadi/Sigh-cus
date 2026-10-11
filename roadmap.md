@@ -1,5 +1,9 @@
 # Sigh-cus — build roadmap
 
+- [x] Add varied incredulous reactions and conversational voice settings; 26 tests pass, a live text response and correction verified, demo entry absent on the public host and available locally. Preview only; audio listening check deferred to avoid spending ElevenLabs credits.
+
+- [x] Rename trigger settings to “Manage My Disappointment” and fix missed blinks and phone-use signals — 25 tests passed; verified settings, phone nag and immediate correction in demo mode; real-camera verification and publication still pending
+
 - [x] Give Gerald expressive squints, eye-rolls, pressed lips and annoyed pot shakes; verified all seven expressions in the preview
 - [x] Expression-preview button — removed at the user's request; Gerald's facial reactions (squint, eye-roll, pressed lips, head shake) still fire on their own from real events
 

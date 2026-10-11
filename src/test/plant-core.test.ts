@@ -7,6 +7,7 @@ import {
   isSlouch,
   logDrink,
   tick,
+  habitSignals,
   type PlantEvent,
   type PlantState,
   type Reading,
@@ -198,6 +199,47 @@ describe("thirst, screen time and abandonment", () => {
 
 describe("face habits", () => {
   const calm: Reading = { ...upright, blink: 0.6 };
+  it("keeps brief camera blinks visible to the slower habit timer", () => {
+    let state = createState(0);
+    const events: PlantEvent[] = [];
+    for (let at = 200; at <= 15_000; at += 200) {
+      const result = tick(state, {
+        ...upright, at, blink: 0,
+        lastBlinkAt: Math.floor(at / 2000) * 2000,
+      }, 200, baseline);
+      state = result.state;
+      events.push(...result.events);
+    }
+    expect(events.some((e) => e.kind === "stare")).toBe(false);
+  });
+
+  it("confirms a stare fix from a blink between timer ticks, then starts a fresh timer", () => {
+    const nagged = advance(createState(0), { ...upright, blink: 0 }, 5);
+    const fixed = tick(nagged.state, {
+      ...upright, at: 5200, blink: 0, lastBlinkAt: 5100,
+    }, 200, baseline);
+    expect(fixed.events).toContainEqual({ kind: "fixed", at: 5200, of: "stare" });
+    expect(fixed.state.habitMs?.stare).toBe(0);
+    expect(habitSignals({ ...upright, at: 5600, blink: 0, lastBlinkAt: 5100 }, baseline).stare).toBe(true);
+  });
+
+  it("does not treat missing blink measurements as staring", () => {
+    expect(habitSignals(upright, baseline).stare).toBe(false);
+  });
+
+  it("detects phone-looking posture even when the head drop also counts as slouch", () => {
+    const phone = { ...slouching, blink: 0.6, lookDown: 0.45 };
+    expect(habitSignals(phone, baseline).phone).toBe(true);
+    const nagged = advance(createState(0), phone, 5);
+    expect(nagged.events.some((e) => e.kind === "phone")).toBe(true);
+    expect(advance(nagged.state, calm, 1).events.some((e) => e.of === "phone" && e.kind === "fixed")).toBe(true);
+  });
+
+  it("uses a hand below the face to support a head-down phone signal, not head tilt alone", () => {
+    expect(habitSignals({ ...slouching, handBelowFace: true }, baseline).phone).toBe(true);
+    expect(habitSignals(slouching, baseline).phone).toBe(false);
+    expect(habitSignals({ ...upright, handBelowFace: true }, baseline).phone).toBe(false);
+  });
   it("nags about each habit after its time and confirms the fix", () => {
     const cases: [Partial<Reading>, string, number][] = [
       [{ browDown: 0.8 }, "frown", 5],
