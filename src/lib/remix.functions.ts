@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { guard } from "./guard";
 
 const inputSchema = z.object({
   image: z.string().startsWith("data:image/").max(6_000_000),
@@ -51,6 +52,7 @@ const jsonSchema = {
 };
 
 export const remixObject = createServerFn({ method: "POST" })
+  .middleware([guard("remix", 5, 60)])
   .inputValidator((input: unknown) => inputSchema.parse(input))
   .handler(async ({ data }): Promise<RemixResult> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
