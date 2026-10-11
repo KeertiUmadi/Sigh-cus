@@ -109,6 +109,8 @@ function PlantApp() {
 
   const sensor = useFaceSensor(onReading);
   const { videoRef, start, stop, status, error, captureFrame } = sensor;
+  const captureRef = useRef(captureFrame);
+  captureRef.current = captureFrame;
 
   // hydrate persisted state
   useEffect(() => {
@@ -269,7 +271,7 @@ function PlantApp() {
       const sip = out.events.some((e) => e.kind === "drink");
       if (sip && modeRef.current === "camera") {
         // head tilt says "sip": ask Gemini to confirm there is a cup or bottle
-        const frame = captureFrame?.();
+        const frame = captureRef.current?.();
         const rest = out.events.filter((e) => e.kind !== "drink");
         if (rest.length) void react(rest);
         if (!frame) {
@@ -301,7 +303,7 @@ function PlantApp() {
       if (out.events.length) void react(out.events);
     }, 200);
     return () => window.clearInterval(id);
-  }, [mode, commit, react, captureFrame]);
+  }, [mode, commit, react]);
 
   // persist
   useEffect(() => {
