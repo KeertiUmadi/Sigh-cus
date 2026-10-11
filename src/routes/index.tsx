@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plant, type PlantExpression } from "@/components/Plant";
+import { Plant } from "@/components/Plant";
 import { Button } from "@/components/ui/button";
-import { Drama, PictureInPicture2, Square } from "lucide-react";
+import { PictureInPicture2 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { StreakChart } from "@/components/StreakChart";
 import { playFanfare } from "@/lib/fanfare";
@@ -23,7 +23,6 @@ import { checkDrinkVessel, judgePosture, plantLine, plantVoice } from "@/lib/pla
 import { useFaceSensor } from "@/lib/use-face-sensor";
 
 const TEXT_ONLY = true;
-const EXPRESSIONS: PlantExpression[] = ["squint", "eye-roll", "pressed-lips", "head-shake", "smug", "unimpressed", "watchful"];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -88,14 +87,6 @@ function PlantApp() {
   const [judging, setJudging] = useState<string | null>(null);
   const [log, setLog] = useState<{ at: number; kind: string; line: string }[]>([]);
   const [demoSpeed, setDemoSpeed] = useState(1);
-  const [expressionStep, setExpressionStep] = useState<number | null>(null);
-  useEffect(() => {
-    if (expressionStep === null) return;
-    const timeout = setTimeout(() => {
-      setExpressionStep(expressionStep >= EXPRESSIONS.length - 1 ? null : expressionStep + 1);
-    }, 4200);
-    return () => clearTimeout(timeout);
-  }, [expressionStep]);
 
   const readingRef = useRef<Reading | null>(null);
   const demoRef = useRef<Reading>({ ...SYNTH_BASELINE, at: Date.now(), faceVisible: true });
@@ -521,7 +512,7 @@ function PlantApp() {
         {/* the plant */}
         <section className="rounded-3xl border bg-card p-5">
           <div className="mx-auto h-72 w-full max-w-xs">
-            <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} previewExpression={expressionStep === null ? undefined : EXPRESSIONS[expressionStep]} />
+            <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} />
           </div>
           <div className="mt-2 flex justify-center">
             <Button variant="outline" size="sm" onClick={() => (pipWin ? pipWin.close() : void openFloat())}>
@@ -538,7 +529,7 @@ function PlantApp() {
                 className="flex h-screen w-screen cursor-pointer flex-col items-center justify-center gap-1 border-0 bg-background p-2 text-foreground"
               >
                 <div className="h-48 w-40">
-                  <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} previewExpression={expressionStep === null ? undefined : EXPRESSIONS[expressionStep]} />
+                  <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} />
                 </div>
                 <p className="line-clamp-3 px-1 text-center text-xs italic leading-snug">
                   {bubble?.line ?? `${Math.round(state.mood)}% happy · ${moodLabel(state.mood)}`}
@@ -587,23 +578,12 @@ function PlantApp() {
                 >
                   {status === "loading" ? "Opening camera…" : "Start the camera"}
                 </button>
-                <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={beginDemo}
                   className="rounded-xl border border-border px-5 py-2.5 font-medium hover:border-primary"
                 >
                   Run in demo mode
                 </button>
-                <Button
-                  variant="outline"
-                  onClick={() => setExpressionStep(expressionStep === null ? 0 : null)}
-                  aria-pressed={expressionStep !== null}
-                  className="h-auto min-h-11 border-border bg-card px-5 py-2.5 text-foreground hover:border-primary hover:bg-secondary hover:text-foreground"
-                >
-                  {expressionStep === null ? <Drama aria-hidden="true" /> : <Square aria-hidden="true" />}
-                  {expressionStep === null ? "Preview expressions" : "Stop expressions"}
-                </Button>
-                </div>
               </div>
             )}
 
