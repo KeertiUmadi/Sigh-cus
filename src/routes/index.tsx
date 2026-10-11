@@ -607,14 +607,6 @@ function PlantApp() {
               </div>
             )}
 
-            <video
-              ref={videoRef}
-              playsInline
-              muted
-              autoPlay
-              onLoadedMetadata={(e) => void e.currentTarget.play().catch(() => undefined)}
-              className={`mt-4 aspect-video w-full -scale-x-100 rounded-xl bg-muted object-contain ${mode === "camera" ? "" : "hidden"}`}
-            />
 
             {mode === "camera" && (
               <div className="mt-4 flex flex-wrap items-center gap-3">
