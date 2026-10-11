@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plant, type PlantExpression } from "@/components/Plant";
 import { Button } from "@/components/ui/button";
-import { Drama, Square } from "lucide-react";
+import { Drama, PictureInPicture2, Square } from "lucide-react";
+import { createPortal } from "react-dom";
 import { StreakChart } from "@/components/StreakChart";
 import { playFanfare } from "@/lib/fanfare";
 import {
@@ -119,7 +120,68 @@ function PlantApp() {
   }, []);
 
   const sensor = useFaceSensor(onReading);
-  const { videoRef, start, stop, status, error, captureFrame } = sensor;
+  const { videoRef, start, stop, status, error, captureFrame, setFrameSource } = sensor;
+  const [pipWin, setPipWin] = useState<Window | null>(null);
+  const pipRef = useRef<Window | null>(null);
+  pipRef.current = pipWin;
+
+  const openFloat = useCallback(async () => {
+    const dpip = (window as unknown as { documentPictureInPicture?: { requestWindow: (o: { width: number; height: number }) => Promise<Window> } }).documentPictureInPicture;
+    if (!dpip) {
+      setVoiceNote("Floating Gerald needs Chrome or Edge on a computer. Keep this tab visible instead.");
+      return;
+    }
+    if (pipRef.current && !pipRef.current.closed) return;
+    try {
+      const w = await dpip.requestWindow({ width: 240, height: 300 });
+      for (const ss of Array.from(document.styleSheets)) {
+        try {
+          const st = w.document.createElement("style");
+          st.textContent = Array.from(ss.cssRules).map((r) => r.cssText).join("\n");
+          w.document.head.appendChild(st);
+        } catch {
+          if (ss.href) {
+            const l = w.document.createElement("link");
+            l.rel = "stylesheet";
+            l.href = ss.href;
+            w.document.head.appendChild(l);
+          }
+        }
+      }
+      w.document.documentElement.className = document.documentElement.className;
+      w.document.body.className = "m-0 bg-background text-foreground";
+      w.document.title = "Gerald";
+      w.addEventListener("pagehide", () => {
+        setFrameSource(null);
+        setPipWin(null);
+      });
+      setFrameSource(w);
+      setPipWin(w);
+    } catch {
+      setVoiceNote("The browser blocked the floating plant. Press Float Gerald again.");
+    }
+  }, [setFrameSource]);
+
+  // Chrome can pop Gerald out automatically when you switch tabs while the camera is on.
+  useEffect(() => {
+    if (mode !== "camera") return;
+    try {
+      navigator.mediaSession?.setActionHandler("enterpictureinpicture" as MediaSessionAction, () => void openFloat());
+    } catch {
+      /* unsupported */
+    }
+    return () => {
+      try {
+        navigator.mediaSession?.setActionHandler("enterpictureinpicture" as MediaSessionAction, null);
+      } catch {
+        /* unsupported */
+      }
+    };
+  }, [mode, openFloat]);
+
+  function backToApp() {
+    window.focus();
+  }
   const captureRef = useRef(captureFrame);
   captureRef.current = captureFrame;
 
@@ -450,6 +512,29 @@ function PlantApp() {
           <div className="mx-auto h-72 w-full max-w-xs">
             <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} previewExpression={expressionStep === null ? undefined : EXPRESSIONS[expressionStep]} />
           </div>
+          <div className="mt-2 flex justify-center">
+            <Button variant="outline" size="sm" onClick={() => (pipWin ? pipWin.close() : void openFloat())}>
+              <PictureInPicture2 className="mr-2 h-4 w-4" />
+              {pipWin ? "Bring Gerald back in" : "Float Gerald over other windows"}
+            </Button>
+          </div>
+          {pipWin &&
+            createPortal(
+              <button
+                type="button"
+                onClick={backToApp}
+                title="Back to Sigh-cus"
+                className="flex h-screen w-screen cursor-pointer flex-col items-center justify-center gap-1 border-0 bg-background p-2 text-foreground"
+              >
+                <div className="h-48 w-40">
+                  <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} previewExpression={expressionStep === null ? undefined : EXPRESSIONS[expressionStep]} />
+                </div>
+                <p className="line-clamp-3 px-1 text-center text-xs italic leading-snug">
+                  {bubble?.line ?? `${Math.round(state.mood)}% happy · ${moodLabel(state.mood)}`}
+                </p>
+              </button>,
+              pipWin.document.body,
+            )}
 
           <div className="mt-2 rounded-2xl border border-primary/30 bg-primary/5 p-4">
             <p className="text-xs uppercase tracking-widest text-primary">

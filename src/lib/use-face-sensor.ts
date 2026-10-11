@@ -22,7 +22,12 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
   } | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const callbackRef = useRef(onReading);
-  const rafRef = useRef(0);
+  const cancelRef = useRef<() => void>(() => undefined);
+  const frameWinRef = useRef<Window | null>(null);
+  /** Run the loop on another visible window (the floating plant) so tracking keeps going while this tab is hidden. */
+  const setFrameSource = useCallback((w: Window | null) => {
+    frameWinRef.current = w;
+  }, []);
   const lastAtRef = useRef(0);
   const [status, setStatus] = useState<SensorStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +35,7 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
   callbackRef.current = onReading;
 
   const stop = useCallback(() => {
-    cancelAnimationFrame(rafRef.current);
+    cancelRef.current();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setStatus("idle");
@@ -105,7 +110,18 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
     void videoRef.current?.play().catch(() => undefined);
 
     const loop = () => {
-      rafRef.current = requestAnimationFrame(loop);
+      const fw = frameWinRef.current;
+      if (fw && !fw.closed) {
+        const id = fw.requestAnimationFrame(loop);
+        cancelRef.current = () => fw.cancelAnimationFrame(id);
+      } else if (document.hidden) {
+        // hidden tab: animation frames stop, timers keep going (throttled)
+        const id = window.setTimeout(loop, 200);
+        cancelRef.current = () => window.clearTimeout(id);
+      } else {
+        const id = requestAnimationFrame(loop);
+        cancelRef.current = () => cancelAnimationFrame(id);
+      }
       const v = videoRef.current;
       const lm = landmarkerRef.current;
       if (!v || !lm || v.readyState < 2) return;
@@ -168,5 +184,5 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
     return c.toDataURL("image/jpeg", 0.7);
   }, []);
 
-  return { videoRef, start, stop, status, error, captureFrame };
+  return { videoRef, start, stop, status, error, captureFrame, setFrameSource };
 }
