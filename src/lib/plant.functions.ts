@@ -11,7 +11,7 @@ const DELIVERIES = ["sigh", "scold", "gospel", "whisper"] as const;
 const LEAVES = ["wither", "perk", "droop"] as const;
 
 const lineSchema = z.object({
-  kind: z.enum(["slouch", "thirst", "screen", "away", "drink", "back"]),
+  kind: z.enum(["slouch", "thirst", "screen", "away", "drink", "back", "fixed"]),
   mood: z.number().min(0).max(100),
   slouchSeconds: z.number().min(0),
   dryMinutes: z.number().min(0),
@@ -46,6 +46,7 @@ const CONTEXT: Record<z.infer<typeof lineSchema>["kind"], string> = {
   screen: "The user has been on screen for {screenMinutes} minutes. Scold them about their eyes.",
   away: "The user left. Whisper about abandonment and the dust settling on your leaves.",
   drink: "The user just drank water after you told them to. Give a dry, deadpan backhanded compliment — praise that is really an insult (e.g. impressed they managed basic survival).",
+  fixed: "The user was slouching, you told them off, and they finally sat up straight. Confirm their posture is now correct, but as a dry backhanded compliment (e.g. astonished they remembered they have a spine).",
   back: "The user came back. Whisper something passive-aggressive about how long that took.",
 };
 

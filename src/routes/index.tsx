@@ -296,6 +296,17 @@ function PlantApp() {
         busy.current = false;
         await speak(out.line, out.delivery);
       } catch (e) {
+        if (ev.kind === "fixed") {
+          const pool = [
+            "Oh, a straight spine. Look at you, doing the bare minimum.",
+            "Posture corrected. I'd clap, but I'm a plant.",
+            "There it is. Was that so hard? Apparently, yes.",
+            "Sitting up. Truly, you contain multitudes.",
+          ];
+          const line = pool[Math.floor(Math.random() * pool.length)] ?? pool[0]!;
+          setBubble({ line, delivery: "whisper", leaf: "perk", kind: "fixed" });
+          setLog((l) => [{ at: ev.at, kind: ev.kind, line }, ...l].slice(0, 12));
+        }
         if (ev.kind === "drink") {
           const pool = [
             "Wow. Hydrated. Truly, a historic achievement for someone of your caliber.",
@@ -540,7 +551,7 @@ function PlantApp() {
 
           <div className="mt-2 rounded-2xl border border-primary/30 bg-primary/5 p-4">
             <p className="text-xs uppercase tracking-widest text-primary">
-              {quietUntil ? "quiet time" : bubble ? bubble.kind === "drink" ? "celebrating" : bubble.kind === "back" ? "noticing you" : "nagging" : "waiting"}
+              {quietUntil ? "quiet time" : bubble ? bubble.kind === "drink" ? "celebrating" : bubble.kind === "back" || bubble.kind === "fixed" ? "noticing you" : "nagging" : "waiting"}
             </p>
             <p className="mt-2 min-h-[3.5rem] font-display text-xl italic leading-snug">
               {bubble?.line ??

@@ -177,4 +177,12 @@ describe("thirst, screen time and abandonment", () => {
     expect(after.state.slouchCount).toBe(1);
     expect(after.state.drinkStreak).toBe(0);
   });
+
+  it("confirms posture once you sit up after a slouch nag, only once", () => {
+    const nagged = advance(createState(0), slouching, RULES.slouchMs / 1000);
+    expect(nagged.state.slouchNagged).toBe(true);
+    const fixed = advance(nagged.state, upright, 6, 1000);
+    expect(fixed.events.filter((e) => e.kind === "fixed")).toHaveLength(1);
+    expect(fixed.state.slouchNagged).toBe(false);
+  });
 });
