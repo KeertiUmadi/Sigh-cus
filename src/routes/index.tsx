@@ -507,6 +507,17 @@ function PlantApp() {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+        {/* camera view — spans the full width so more of the room is visible */}
+        <section className={mode === "camera" ? "lg:col-span-2" : "hidden"}>
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            autoPlay
+            onLoadedMetadata={(e) => void e.currentTarget.play().catch(() => undefined)}
+            className="aspect-video max-h-[60vh] w-full -scale-x-100 rounded-xl bg-muted object-contain"
+          />
+        </section>
         {/* the plant */}
         <section className="rounded-3xl border bg-card p-5">
           <div className="mx-auto h-72 w-full max-w-xs">
