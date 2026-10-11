@@ -13,7 +13,9 @@
 - [x] Code is on GitHub at github.com/KeertiUmadi/Sigh-cus — 86 project files plus a README, pushed through the linked GitHub connection
 - [ ] Copy the code into the team repo github.com/ShubhangiPurohit-dev/Sigh-cus — blocked: KeertiUmadi has no write access there; needs Shubhangi to add KeertiUmadi as a collaborator with Write, then re-run /tmp/browser/push-gh/gh_push.py
 - [x] Hand the user a zip of the project files — saved as guilt-trip-plant.zip in Files
-- [x] Publish the app so anyone with a link can open it — publishing scheduled for https://tune-cataloger-buddy.lovable.app (public visibility)
+- [x] Publish the app so anyone with a link can open it — live at https://sigh-cus.lovable.app (public visibility; the old tune-cataloger-buddy address no longer works)
+- [x] Rename the app to Sigh-cus everywhere — page title, heading, tracks page, README, and the address itself
+- [ ] Re-push the renamed README to github.com/KeertiUmadi/Sigh-cus — the copy on GitHub still carries the old name
 
 - [x] Snooze: pause Gerald's comments for a while (keep counting)
 - [x] Fix sip detection (chin-up sign was inverted) + manual "I just drank water" button
