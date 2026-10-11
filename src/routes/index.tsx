@@ -19,6 +19,8 @@ import {
 import { judgePosture, plantLine, plantVoice } from "@/lib/plant.functions";
 import { useFaceSensor } from "@/lib/use-face-sensor";
 
+const TEXT_ONLY = true;
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -133,6 +135,11 @@ function PlantApp() {
   }, [stop]);
 
   const speak = useCallback(async (text: string, delivery: string) => {
+    // Text-only while the user validates responses: no ElevenLabs, no browser voice.
+    if (TEXT_ONLY) {
+      setSpeaking(false);
+      return;
+    }
     setSpeaking(true);
     try {
       const { audio } = await plantVoice({
