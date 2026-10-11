@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { guard } from "./guard";
 
 /**
  * Gerald's long-term memory, kept in Backboard. Each browser gets its own
@@ -19,6 +20,7 @@ const recallSchema = z.object({
 });
 
 export const rememberHabit = createServerFn({ method: "POST" })
+  .middleware([guard("remember", 20, 500)])
   .inputValidator((input: unknown) => rememberSchema.parse(input))
   .handler(async ({ data }): Promise<{ assistantId: string | null }> => {
     const key = process.env["BACKBOARD_API_KEY"];
@@ -54,6 +56,7 @@ export const rememberHabit = createServerFn({ method: "POST" })
   });
 
 export const recallHabits = createServerFn({ method: "POST" })
+  .middleware([guard("recall", 20, 500)])
   .inputValidator((input: unknown) => recallSchema.parse(input))
   .handler(async ({ data }): Promise<{ memories: string[] }> => {
     const key = process.env["BACKBOARD_API_KEY"];
