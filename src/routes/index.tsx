@@ -24,13 +24,13 @@ const TEXT_ONLY = true;
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Guilt-Trip Plant — the desk plant that judges your posture" },
+      { title: "Sigh-cus — the desk plant that judges your posture" },
       {
         name: "description",
         content:
           "A melodramatic office plant that watches your posture, hydration and screen time through your webcam, then sighs, wilts and sends theatrical guilt notifications.",
       },
-      { property: "og:title", content: "Guilt-Trip Plant — the desk plant that judges your posture" },
+      { property: "og:title", content: "Sigh-cus — the desk plant that judges your posture" },
       {
         property: "og:description",
         content:
@@ -384,7 +384,7 @@ function PlantApp() {
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-8">
       <header className="mb-6">
         <p className="text-xs uppercase tracking-[0.35em] text-primary">Passive-aggressive office tamagotchi</p>
-        <h1 className="mt-2 font-display text-5xl leading-none sm:text-6xl">Guilt-Trip Plant</h1>
+        <h1 className="mt-2 font-display text-5xl leading-none sm:text-6xl">Sigh-cus</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">
           A desk plant that does not track productivity. It watches your posture, your hydration and
           your screen time, and reacts entirely through guilt and melodrama.

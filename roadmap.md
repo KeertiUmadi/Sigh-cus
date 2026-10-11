@@ -1,4 +1,4 @@
-# Guilt-Trip Plant — build roadmap
+# Sigh-cus — build roadmap
 
 - [x] Webcam posture + water detection (MediaPipe face landmarks, graceful fallback)
 - [x] Guilt line writing via Gemini (server function, key stays server-side)
