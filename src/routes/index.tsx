@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plant } from "@/components/Plant";
+import { Plant, type PlantExpression } from "@/components/Plant";
+import { Button } from "@/components/ui/button";
+import { Drama, Square } from "lucide-react";
 import { StreakChart } from "@/components/StreakChart";
 import { playFanfare } from "@/lib/fanfare";
 import {
@@ -20,6 +22,7 @@ import { checkDrinkVessel, judgePosture, plantLine, plantVoice } from "@/lib/pla
 import { useFaceSensor } from "@/lib/use-face-sensor";
 
 const TEXT_ONLY = true;
+const EXPRESSIONS: PlantExpression[] = ["squint", "eye-roll", "pressed-lips", "head-shake", "smug", "unimpressed", "watchful"];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -84,6 +87,14 @@ function PlantApp() {
   const [judging, setJudging] = useState<string | null>(null);
   const [log, setLog] = useState<{ at: number; kind: string; line: string }[]>([]);
   const [demoSpeed, setDemoSpeed] = useState(1);
+  const [expressionStep, setExpressionStep] = useState<number | null>(null);
+  useEffect(() => {
+    if (expressionStep === null) return;
+    const timeout = setTimeout(() => {
+      setExpressionStep(expressionStep >= EXPRESSIONS.length - 1 ? null : expressionStep + 1);
+    }, 4200);
+    return () => clearTimeout(timeout);
+  }, [expressionStep]);
 
   const readingRef = useRef<Reading | null>(null);
   const demoRef = useRef<Reading>({ ...SYNTH_BASELINE, at: Date.now(), faceVisible: true });
@@ -437,7 +448,7 @@ function PlantApp() {
         {/* the plant */}
         <section className="rounded-3xl border bg-card p-5">
           <div className="mx-auto h-72 w-full max-w-xs">
-            <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} />
+            <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} previewExpression={expressionStep === null ? undefined : EXPRESSIONS[expressionStep]} />
           </div>
 
           <div className="mt-2 rounded-2xl border border-primary/30 bg-primary/5 p-4">
@@ -480,12 +491,23 @@ function PlantApp() {
                 >
                   {status === "loading" ? "Opening camera…" : "Start the camera"}
                 </button>
+                <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={beginDemo}
                   className="rounded-xl border border-border px-5 py-2.5 font-medium hover:border-primary"
                 >
                   Run in demo mode
                 </button>
+                <Button
+                  variant="outline"
+                  onClick={() => setExpressionStep(expressionStep === null ? 0 : null)}
+                  aria-pressed={expressionStep !== null}
+                  className="h-auto min-h-11 border-border bg-card px-5 py-2.5 text-foreground hover:border-primary hover:bg-secondary hover:text-foreground"
+                >
+                  {expressionStep === null ? <Drama aria-hidden="true" /> : <Square aria-hidden="true" />}
+                  {expressionStep === null ? "Preview expressions" : "Stop expressions"}
+                </Button>
+                </div>
               </div>
             )}
 

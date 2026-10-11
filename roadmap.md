@@ -1,5 +1,8 @@
 # Sigh-cus — build roadmap
 
+- [x] Give Gerald expressive squints, eye-rolls, pressed lips and annoyed pot shakes; verified all seven expressions in the preview
+- [x] Add a button beside Run in demo mode that plays every facial expression, including the head shake, without camera or AI calls; Stop restores the normal face
+
 - [x] Webcam posture + water detection (MediaPipe face landmarks, graceful fallback)
 - [x] Guilt line writing via Gemini (server function, key stays server-side)
 - [x] Guilt-streak chart (mood trail with drink and slouch markers)

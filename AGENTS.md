@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - AI calls go through a createServerFn that reads LOVABLE_API_KEY inside the handler (src/lib/remix.functions.ts); why: key must stay server-side.
+- Plant expressions use existing event pulses and mood in the Plant component, with reduced-motion-aware CSS; why: visual reactions stay synchronized without extra AI or voice calls.

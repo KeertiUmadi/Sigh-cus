@@ -56,6 +56,7 @@
   --color-pot-rim: var(--pot-rim);
   --color-soil: var(--soil);
   --color-pot-face: var(--pot-face);
+  --color-plant-eye: var(--plant-eye);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -89,6 +90,7 @@
   --pot-rim: oklch(0.53 0.11 45);
   --soil: oklch(0.3 0.05 60);
   --pot-face: oklch(0.15 0.02 60);
+  --plant-eye: oklch(0.94 0.015 95);
   --secondary: oklch(0.26 0.04 280);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
@@ -215,3 +217,62 @@ body { font-family: var(--font-sans); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 .speech-pop { animation: speech-pop 0.25s ease-out; }
+
+/* Human-like gestures: body, gaze and lips have independent timing. */
+@keyframes plant-breathe {
+  0%, 100% { transform: rotate(-0.5deg); }
+  50% { transform: rotate(0.7deg); }
+}
+.plant-breathe { transform-origin: 120px 260px; animation: plant-breathe 7s ease-in-out infinite; }
+@keyframes plant-head-shake {
+  0%, 20%, 65%, 100% { transform: translateX(0) rotate(0deg); }
+  28%, 46% { transform: translateX(-7px) rotate(-4deg); }
+  37%, 55% { transform: translateX(7px) rotate(4deg); }
+}
+.plant-head-shake { transform-origin: 120px 253px; animation: plant-head-shake 3.4s ease-in-out; }
+@keyframes plant-smug-nod {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%, 65% { transform: translateY(3px) rotate(-2deg); }
+  45% { transform: translateY(-2px) rotate(2deg); }
+}
+.plant-smug-nod { transform-origin: 120px 253px; animation: plant-smug-nod 1.8s ease-in-out; }
+@keyframes plant-blink {
+  0%, 42%, 46%, 91%, 95%, 100% { transform: scaleY(1); }
+  44%, 93% { transform: scaleY(0.06); }
+}
+.plant-blink { transform-origin: 120px 227px; animation: plant-blink 8.7s ease-in-out infinite; }
+@keyframes plant-eye-roll {
+  0%, 8%, 100% { transform: translate(0, 0); }
+  18% { transform: translate(-3px, -2px); }
+  32%, 48% { transform: translate(0, -4px); }
+  62% { transform: translate(3px, -2px); }
+  78%, 90% { transform: translate(3px, 0); }
+}
+.plant-eye-roll { animation: plant-eye-roll 3.8s ease-in-out; }
+@keyframes plant-side-eye {
+  0%, 100% { transform: translateX(0); }
+  25%, 75% { transform: translateX(3px); }
+}
+.plant-side-eye { animation: plant-side-eye 3.8s ease-in-out; }
+@keyframes plant-idle-glance {
+  0%, 25%, 65%, 100% { transform: translateX(0); }
+  32%, 45% { transform: translateX(-2px); }
+  75%, 85% { transform: translateX(2px); }
+}
+.plant-idle-glance { animation: plant-idle-glance 15s ease-in-out infinite; }
+@keyframes plant-squint {
+  0%, 100% { transform: translateY(0); }
+  16%, 65% { transform: translateY(3px); }
+}
+.plant-squint { animation: plant-squint 4.2s ease-in-out; }
+@keyframes plant-lip-press {
+  0%, 100% { transform: scaleX(1); }
+  20%, 80% { transform: scaleX(1.15) scaleY(0.6); }
+}
+.plant-lip-press { transform-origin: 120px 242px; animation: plant-lip-press 4.2s ease-in-out; }
+@media (prefers-reduced-motion: reduce) {
+  .plant-breathe, .plant-head-shake, .plant-smug-nod, .plant-blink,
+  .plant-eye-roll, .plant-side-eye, .plant-idle-glance, .plant-squint,
+  .plant-lip-press, .plant-shudder, .plant-talk { animation: none; }
+  .plant-fall { animation-duration: 0.01ms; animation-delay: 0s; }
+}
