@@ -170,7 +170,7 @@ describe("thirst, screen time and abandonment", () => {
   });
 
   it("resets a good streak when it catches you slouching", () => {
-    const drank = advance(createState(0), drinking, 3, 500);
+    const drank = advance(createState(0), drinking, 8, 500);
     expect(drank.state.drinkStreak).toBe(1);
 
     const after = advance(drank.state, slouching, RULES.slouchMs / 1000);
