@@ -93,7 +93,7 @@ const DEMO_LABEL: Record<DemoKind, string> = {
 /** Used when running without a camera, so the demo never depends on hardware. */
 const SYNTH_BASELINE: Baseline = { pitch: 0.8, frameY: 0.35, eyeDist: 0.18, mouthGap: 0.12 };
 
-type Mode = "off" | "camera" | "demo";
+type Mode = "off" | "camera" | "demo" | "nocam";
 
 type Bubble = {
   line: string;
@@ -450,11 +450,24 @@ function PlantApp() {
       const now = Date.now();
       const dt = Math.min(2000, now - lastAt.current) * speedRef.current;
       lastAt.current = now;
-      const reading =
-        modeRef.current === "camera" ? readingRef.current : { ...demoRef.current, at: now };
+      const noCam = modeRef.current === "nocam";
+      const reading = noCam
+        ? { ...SYNTH_BASELINE, at: now, faceVisible: true }
+        : modeRef.current === "camera"
+          ? readingRef.current
+          : { ...demoRef.current, at: now };
       if (!reading) return;
       const prev = stateRef.current;
-      const out = tick(prev, reading, dt, base, triggersRef.current);
+      // Without a camera only the habits that need no eyes on you are counted.
+      const trig = noCam
+        ? Object.fromEntries(
+            Object.entries(triggersRef.current).map(([k, v]) => [
+              k,
+              { ...v, on: v.on && (k === "thirst" || k === "screen") },
+            ]),
+          ) as typeof triggersRef.current
+        : triggersRef.current;
+      const out = tick(prev, reading, dt, base, trig);
       commit(out.state);
       const sip = out.events.some((e) => e.kind === "drink");
       if (sip && modeRef.current === "camera") {
@@ -520,6 +533,11 @@ function PlantApp() {
     setMode("camera");
     await new Promise((r) => setTimeout(r, 0));
     await start();
+  }
+
+  function beginNoCamera() {
+    setMode("nocam");
+    setDemoSpeed(1);
   }
 
   function beginDemo() {
@@ -675,6 +693,8 @@ function PlantApp() {
             ? "Camera session"
             : mode === "demo"
               ? "Demo session"
+              : mode === "nocam"
+                ? "No-camera session"
               : "Ready when you are"}
         </div>
       </header>
@@ -797,6 +817,8 @@ function PlantApp() {
             <p className="panel-description">
               {mode === "demo"
                 ? "Try a habit below and see how Gerald takes it. He has feelings about all of them."
+                : mode === "nocam"
+                  ? "No camera, so Gerald only tracks water and screen time. Tap “I drank water” when you sip. Posture, phone, yawning and the rest stay off."
                 : mode === "camera"
                   ? "Sit comfortably, calibrate your posture, and let Gerald keep you company."
                   : "Turn on your camera and Gerald will look out for you."}
@@ -815,6 +837,15 @@ function PlantApp() {
                   {status === "loading" ? "Opening camera…" : "Start the camera"}
                   <ArrowUpRight size={16} />
                 </Button>
+                {!active && (
+                  <Button
+                    onClick={beginNoCamera}
+                    variant="outline"
+                    className="rounded-xl border border-border px-5 py-2.5 font-medium hover:border-primary"
+                  >
+                    Continue without camera
+                  </Button>
+                )}
                 {showDemo && (
                   <Button
                     onClick={beginDemo}
