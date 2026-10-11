@@ -119,7 +119,7 @@ describe("drinking water", () => {
     const warmed = advance(createState(0), slouching, 60);
     expect(warmed.state.slouchMs).toBe(60_000);
 
-    const { state, events } = advance(warmed.state, drinking, 3, 500);
+    const { state, events } = advance(warmed.state, drinking, 8, 500);
     expect(events.map((e) => e.kind)).toContain("drink");
     expect(state.drinkCount).toBe(1);
     expect(state.drinkStreak).toBe(1);
@@ -128,7 +128,7 @@ describe("drinking water", () => {
   });
 
   it("counts one sip as one drink, even while the mouth stays open", () => {
-    const first = advance(createState(0), drinking, 3, 500);
+    const first = advance(createState(0), drinking, 8, 500);
     expect(first.state.drinkCount).toBe(1);
 
     // a minute of the same open-mouthed reading only earns the next two sips,
@@ -170,7 +170,7 @@ describe("thirst, screen time and abandonment", () => {
   });
 
   it("resets a good streak when it catches you slouching", () => {
-    const drank = advance(createState(0), drinking, 3, 500);
+    const drank = advance(createState(0), drinking, 8, 500);
     expect(drank.state.drinkStreak).toBe(1);
 
     const after = advance(drank.state, slouching, RULES.slouchMs / 1000);

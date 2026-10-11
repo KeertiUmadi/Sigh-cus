@@ -52,8 +52,8 @@ export const RULES = {
   screenMs: 60 * 60_000,
   /** face gone for this long -> abandonment nag */
   awayMs: 5_000,
-  /** chin tipped up (mouth open, or chin way up) held this long counts as a drink */
-  drinkHoldMs: 700,
+  /** chin tipped up held this long counts as a drink — a real sip takes 3 seconds */
+  drinkHoldMs: 3_000,
   /** a sip is one celebration, not one per frame */
   drinkCooldownMs: 20_000,
   /** the plant will not nag twice about the same thing inside this window */
