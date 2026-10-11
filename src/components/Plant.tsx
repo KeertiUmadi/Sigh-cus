@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Leaf } from "@/lib/plant-core";
 
 /**
@@ -101,7 +102,7 @@ export function Plant({
                       "--fall-x": `${l.side * 30}px`,
                       "--fall-rot": `${l.side * 240}deg`,
                       "--fall-delay": `${(i - attachedCount) * 0.45}s`,
-                    } as React.CSSProperties
+                    } as CSSProperties
                   }
                 >
                   <path

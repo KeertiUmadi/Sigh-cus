@@ -207,7 +207,6 @@ body { font-family: var(--font-sans); }
   transform-box: fill-box;
   transform-origin: 0 0;
   animation-delay: var(--fall-delay, 0s);
-  fill-mode: forwards;
 }
 
 /* the speech bubble arrives with a little bounce */
