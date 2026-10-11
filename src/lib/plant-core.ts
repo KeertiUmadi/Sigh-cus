@@ -43,7 +43,7 @@ export const RULES = {
   /** face gone for this long -> abandonment nag */
   awayMs: 20_000,
   /** chin tipped up (mouth open, or chin way up) held this long counts as a drink */
-  drinkHoldMs: 600,
+  drinkHoldMs: 1200,
   /** a sip is one celebration, not one per frame */
   drinkCooldownMs: 20_000,
   /** the plant will not nag twice about the same thing inside this window */
@@ -73,11 +73,11 @@ export const SENSITIVITY = {
   slouchFrameY: 0.07,
   slouchEyeRatio: 1.25,
   /** mouth this much more open than at rest */
-  drinkGapAdd: 0.12,
+  drinkGapAdd: 0.15,
   /** chin up: nose this much closer to the eye line than when calibrated */
-  drinkPitchRatio: 0.82,
+  drinkPitchRatio: 0.78,
   /** chin so far up that it counts even when the bottle hides the mouth */
-  drinkPitchHardRatio: 0.65,
+  drinkPitchHardRatio: 0.6,
 };
 
 export type NagKind = "slouch" | "thirst" | "screen" | "away";
@@ -208,7 +208,7 @@ export function drinkSignals(r: Reading, b: Baseline) {
  */
 export function isDrink(r: Reading, b: Baseline) {
   const s = drinkSignals(r, b);
-  return (s.chinUp && s.mouthOpen) || s.chinWayUp;
+  return s.chinUp && (s.mouthOpen || s.chinWayUp);
 }
 
 /** Count a sip: one celebration per cooldown window. Mutates s. */
