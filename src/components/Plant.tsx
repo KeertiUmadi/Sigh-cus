@@ -27,7 +27,7 @@ export function Plant({
   leaf: Leaf;
   speaking: boolean;
   pulse: number;
-  reaction?: EventKind;
+  reaction?: EventKind | undefined;
 }) {
   const eyeClip = useId().replace(/:/g, "");
   const [reacting, setReacting] = useState(false);
