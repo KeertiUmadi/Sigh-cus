@@ -55,6 +55,9 @@ export const RULES = {
   thirstHit: 8,
   screenHit: 6,
   awayHit: 4,
+  /** sitting up straight this long after a slouch nag counts as fixed */
+  uprightConfirmMs: 3000,
+  fixedBoost: 8,
   drinkBoost: 14,
   backBoost: 6,
   /** mood regained per minute spent sitting up straight */
@@ -81,7 +84,7 @@ export const SENSITIVITY = {
 };
 
 export type NagKind = "slouch" | "thirst" | "screen" | "away";
-export type EventKind = NagKind | "drink" | "back";
+export type EventKind = NagKind | "drink" | "back" | "fixed";
 export type Delivery = "sigh" | "scold" | "gospel" | "whisper";
 export type Leaf = "wither" | "perk" | "droop";
 
@@ -94,6 +97,7 @@ export const FLAVOR: Record<EventKind, { delivery: Delivery; leaf: Leaf }> = {
   away: { delivery: "whisper", leaf: "droop" },
   drink: { delivery: "gospel", leaf: "perk" },
   back: { delivery: "whisper", leaf: "perk" },
+  fixed: { delivery: "whisper", leaf: "perk" },
 };
 
 export type TrailPoint = {
@@ -116,6 +120,9 @@ export type PlantState = {
   drinkStreak: number;
   drinkCount: number;
   slouchCount: number;
+  /** a slouch nag is outstanding, waiting for you to sit up */
+  slouchNagged: boolean;
+  uprightMs: number;
   lastNagAt: Partial<Record<NagKind, number>>;
   startedAt: number;
   lastTrailAt: number;
@@ -147,6 +154,8 @@ export function createState(at: number): PlantState {
     drinkStreak: 0,
     drinkCount: 0,
     slouchCount: 0,
+    slouchNagged: false,
+    uprightMs: 0,
     lastNagAt: {},
     startedAt: at,
     lastTrailAt: at,
@@ -288,8 +297,15 @@ export function tick(
 
     if (isSlouch(reading, baseline)) {
       s.slouchMs += dtMs;
+      s.uprightMs = 0;
     } else {
       s.slouchMs = 0;
+      s.uprightMs += dtMs;
+      if (s.slouchNagged && s.uprightMs >= RULES.uprightConfirmMs) {
+        s.slouchNagged = false;
+        events.push(event("fixed", at));
+        s.mood += RULES.fixedBoost;
+      }
       s.mood += (dtMs / 60_000) * RULES.uprightRecoveryPerMin;
     }
   }
@@ -302,6 +318,7 @@ export function tick(
     s.lastNagAt.slouch = at;
     s.mood -= RULES.slouchHit;
     s.slouchCount += 1;
+    s.slouchNagged = true;
     s.drinkStreak = 0;
   }
 

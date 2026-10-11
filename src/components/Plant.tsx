@@ -41,7 +41,7 @@ export function Plant({
     const timeout = setTimeout(() => setReacting(false), 4200);
     return () => clearTimeout(timeout);
   }, [pulse]);
-  const pleased = previewExpression ? previewExpression === "smug" : reacting && (reaction === "drink" || reaction === "back");
+  const pleased = previewExpression ? previewExpression === "smug" : reacting && (reaction === "drink" || reaction === "back" || reaction === "fixed");
   const annoyed = previewExpression ? ["squint", "eye-roll", "pressed-lips", "head-shake"].includes(previewExpression) : reacting && !pleased;
   const expression = previewExpression ?? (pleased ? "smug" : annoyed ? "annoyed" : mood < 45 ? "unimpressed" : "watchful");
   const shake = previewExpression ? previewExpression === "head-shake" : annoyed;
