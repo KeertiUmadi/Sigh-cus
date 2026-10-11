@@ -128,7 +128,7 @@ describe("drinking water", () => {
   });
 
   it("counts one sip as one drink, even while the mouth stays open", () => {
-    const first = advance(createState(0), drinking, 3, 500);
+    const first = advance(createState(0), drinking, 8, 500);
     expect(first.state.drinkCount).toBe(1);
 
     // a minute of the same open-mouthed reading only earns the next two sips,
