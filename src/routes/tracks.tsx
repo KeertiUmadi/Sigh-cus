@@ -67,6 +67,25 @@ function TracksPage() {
       <p className="mt-2 text-muted-foreground">
         CodeRED Orion, 24 hours. Here is what we are going for and how far along each piece is.
       </p>
+      <div className="mt-4 rounded-lg border border-border bg-card p-4 text-sm">
+        <p>
+          App:{" "}
+          <a href="https://sigh-cus.design" className="underline">
+            sigh-cus.design
+          </a>{" "}
+          (also works at{" "}
+          <a href="https://www.sigh-cus.design" className="underline">
+            www.sigh-cus.design
+          </a>
+          )
+        </p>
+        <p className="mt-1">
+          Code:{" "}
+          <a href="https://github.com/KeertiUmadi/Sigh-cus" className="underline">
+            github.com/KeertiUmadi/Sigh-cus
+          </a>
+        </p>
+      </div>
       <Section title="CodeRED Orion" items={MAIN} />
       <Section title="MLH challenges" items={MLH} />
     </main>
