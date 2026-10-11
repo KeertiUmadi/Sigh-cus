@@ -45,3 +45,4 @@
 - [ ] Real-camera check of every habit — blocked: needs someone sitting in front of a webcam
 - [ ] Screen time still 60 minutes — a 5-second limit would nag nonstop; waiting on the user's word
 - [ ] Gerald's opening line still says "Slouch for two minutes" — the real rule is 5 seconds; waiting on the user's word
+- [x] Judge-ready pitch written for the four-person team (Shubhangi, Keerti, Harshitha, Sunny) — saved as sigh-cus-pitch.md in Files: four speaking parts, 90-second demo script, 3-minute cut, Q&A prep, and a pre-presentation checklist
