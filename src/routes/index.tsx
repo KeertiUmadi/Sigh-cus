@@ -437,7 +437,7 @@ function PlantApp() {
         {/* the plant */}
         <section className="rounded-3xl border bg-card p-5">
           <div className="mx-auto h-72 w-full max-w-xs">
-            <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} />
+            <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} />
           </div>
 
           <div className="mt-2 rounded-2xl border border-primary/30 bg-primary/5 p-4">

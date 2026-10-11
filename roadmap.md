@@ -1,5 +1,7 @@
 # Sigh-cus — build roadmap
 
+- [ ] Give Gerald expressive squints, eye-rolls, pressed lips and annoyed pot shakes; verify reactions in the preview
+
 - [x] Webcam posture + water detection (MediaPipe face landmarks, graceful fallback)
 - [x] Guilt line writing via Gemini (server function, key stays server-side)
 - [x] Guilt-streak chart (mood trail with drink and slouch markers)

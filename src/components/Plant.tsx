@@ -1,5 +1,5 @@
-import type { CSSProperties } from "react";
-import type { Leaf } from "@/lib/plant-core";
+import { useEffect, useId, useState, type CSSProperties } from "react";
+import type { EventKind, Leaf } from "@/lib/plant-core";
 
 /**
  * Gerald. A potted plant whose leaves physically droop as his mood drops, and
@@ -21,17 +21,30 @@ export function Plant({
   leaf,
   speaking,
   pulse,
+  reaction,
 }: {
   mood: number;
   leaf: Leaf;
   speaking: boolean;
   pulse: number;
+  reaction?: EventKind;
 }) {
+  const eyeClip = useId().replace(/:/g, "");
+  const [reacting, setReacting] = useState(false);
+  useEffect(() => {
+    if (pulse === 0) return;
+    setReacting(true);
+    const timeout = setTimeout(() => setReacting(false), 4200);
+    return () => clearTimeout(timeout);
+  }, [pulse]);
+  const pleased = reacting && (reaction === "drink" || reaction === "back");
+  const annoyed = reacting && !pleased;
+  const expression = pleased ? "smug" : annoyed ? "annoyed" : mood < 45 ? "unimpressed" : "watchful";
   const health = Math.max(0, Math.min(1, mood / 100));
   // Perky when healthy, flat on the desk when dying.
   const droop = -26 + (1 - health) * 62 + (leaf === "wither" ? 10 : 0) - (leaf === "perk" ? 12 : 0);
   const stemLean = (1 - health) * 14;
-  const eyeOpen = 0.35 + health * 0.65;
+  const eyeOpen = expression === "unimpressed" ? 0.45 : 0.65 + health * 0.35;
   const mouthCurve = speaking ? 1 : health * 0.8 - 0.4;
   // Leaves brown out as mood drops, then start dropping off entirely.
   const witherMix = Math.round(Math.min(1, Math.max(0, (0.6 - health) / 0.45)) * 85);
@@ -44,10 +57,19 @@ export function Plant({
   return (
     <svg
       viewBox="0 0 240 268"
-      className={`h-full w-full ${leaf === "wither" ? "plant-shudder" : ""}`}
+      className="h-full w-full"
       role="img"
-      aria-label={`A desk plant that is ${Math.round(mood)} percent happy`}
+      aria-label={`Gerald, ${expression}, ${Math.round(mood)} percent happy`}
+      data-expression={expression}
     >
+      <defs>
+        <clipPath id={eyeClip}>
+          <ellipse cx="103" cy="227" rx="7" ry={6 * eyeOpen} />
+          <ellipse cx="137" cy="227" rx="7" ry={6 * eyeOpen} />
+        </clipPath>
+      </defs>
+      <g className="plant-breathe">
+      <g key={`reaction-${pulse}`} className={annoyed ? "plant-head-shake" : pleased ? "plant-smug-nod" : undefined}>
       <g
         key={pulse}
         style={{ transformOrigin: "120px 210px", transition: "transform 1.4s ease-in-out" }}
@@ -130,35 +152,29 @@ export function Plant({
 
         {/* brows */}
         <path
-          d={`M96 ${216 - health * 2} L110 ${219 - health * 4}`}
+          d={pleased ? "M95 215 Q103 210 111 214" : annoyed || mood < 45 ? "M95 216 L111 219" : `M96 ${216 - health * 2} L110 ${219 - health * 4}`}
           stroke="var(--color-pot-face)"
           strokeWidth="3"
           strokeLinecap="round"
         />
         <path
-          d={`M144 ${216 - health * 2} L130 ${219 - health * 4}`}
+          d={pleased ? "M129 212 Q137 207 145 211" : annoyed || mood < 45 ? "M129 219 L145 216" : `M144 ${216 - health * 2} L130 ${219 - health * 4}`}
           stroke="var(--color-pot-face)"
           strokeWidth="3"
           strokeLinecap="round"
         />
 
         {/* eyes */}
-        <ellipse
-          cx="103"
-          cy="227"
-          rx="5"
-          ry={4.5 * eyeOpen}
-          fill="var(--color-pot-face)"
-          style={{ transition: "ry 0.5s ease-in-out" }}
-        />
-        <ellipse
-          cx="137"
-          cy="227"
-          rx="5"
-          ry={4.5 * eyeOpen}
-          fill="var(--color-pot-face)"
-          style={{ transition: "ry 0.5s ease-in-out" }}
-        />
+        <g className="plant-blink">
+          <g clipPath={`url(#${eyeClip})`}>
+            <rect x="94" y="218" width="52" height="18" fill="var(--color-plant-eye)" />
+            <g className={annoyed ? "plant-eye-roll" : pleased ? "plant-side-eye" : "plant-idle-glance"}>
+              <ellipse cx="103" cy="227" rx="3.2" ry="4" fill="var(--color-pot-face)" />
+              <ellipse cx="137" cy="227" rx="3.2" ry="4" fill="var(--color-pot-face)" />
+            </g>
+            <path d="M94 218 H146 V223 H94 Z" fill="var(--color-pot)" className={reacting ? "plant-squint" : "plant-lids"} />
+          </g>
+        </g>
 
         {/* mouth: a flat line that opens when he talks */}
         {speaking ? (
@@ -172,14 +188,17 @@ export function Plant({
           />
         ) : (
           <path
-            d={`M108 241 Q120 ${241 + mouthCurve * 12} 132 241`}
+            d={annoyed || expression === "unimpressed" ? "M106 242 Q120 241 134 242" : pleased ? "M108 242 Q122 247 134 239" : `M108 241 Q120 ${241 + mouthCurve * 12} 132 241`}
             fill="none"
             stroke="var(--color-pot-face)"
-            strokeWidth="3"
+            strokeWidth={annoyed ? "2" : "3"}
             strokeLinecap="round"
+            className={annoyed ? "plant-lip-press" : undefined}
             style={{ transition: "d 0.6s ease-in-out" }}
           />
         )}
+      </g>
+      </g>
       </g>
     </svg>
   );
