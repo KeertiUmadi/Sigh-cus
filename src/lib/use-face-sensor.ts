@@ -56,7 +56,12 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          aspectRatio: { ideal: 16 / 9 },
+          facingMode: "user",
+        },
         audio: false,
       });
     } catch (e) {
