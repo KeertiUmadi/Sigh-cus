@@ -10,7 +10,7 @@
 - [x] Test the state-machine rules (2-minute slouch, drink detection, nags) — 14 tests green
 - [x] Verify end-to-end in the browser (demo mode: drink cheers, slouch nags, chart fills)
 - [x] ElevenLabs spoken sighs and gospel cheers — key permissions ticked, voice live
-- [ ] Backboard memory of past sessions — blocked: needs the user's Backboard API key
+- [x] Backboard memory of past sessions — done: the user's key is saved as a secret, Gerald records each nag, drink and habit with a date and can refer back on later visits; verified in demo mode (a memory profile is created and the event saved)
 - [ ] Tiger Data streak history — blocked: needs Lovable Cloud enabled
 - [x] Custom domain for the app — done with sigh-cus.design; fernforgivemenot.live was not bought and is not needed
 - [x] Code is on GitHub at github.com/KeertiUmadi/Sigh-cus — 86 project files plus a README, pushed through the linked GitHub connection
@@ -30,3 +30,9 @@
 - [x] Six new habits (frown/squint, staring, leaning close, nail-biting, yawning, phone) with sarcastic "you fixed it" lines; faster timings (thirst 1 min, slouch/away/stare/close 10 s, frown/nails/yawn 5 s, phone 20 s)
 - [x] Publish the new habits to https://sigh-cus.design — publishing requested for the public site
 - [x] "Fine, I'll Speak" voice button — Gerald types until you press it, then speaks his lines with ElevenLabs and the button becomes "That's Enough, Gerald"; verified audio plays when on, no voice calls when off, and it is live on sigh-cus.design
+- [x] Faster triggers + instant compliments — every habit except drinking now nags after 5 seconds (thirst stays 1 minute); fixing a habit earns a backhanded line immediately instead of waiting for the AI to write one
+- [x] Sip rules tightened — a head tilt must hold 3 seconds and only counts after Gerald has nagged about water; the automatic checks pass (21), but this has not been tried on a real camera
+- [x] Publish these to https://sigh-cus.design — publishing requested; the Lovable address is now https://sigh-cus.lovable.app
+- [ ] Real-camera check of every habit — blocked: needs someone sitting in front of a webcam
+- [ ] Screen time still 60 minutes — a 5-second limit would nag nonstop; waiting on the user's word
+- [ ] Gerald's opening line still says "Slouch for two minutes" — the real rule is 5 seconds; waiting on the user's word
