@@ -818,7 +818,7 @@ function PlantApp() {
               {mode === "demo"
                 ? "Try a habit below and see how Gerald takes it. He has feelings about all of them."
                 : mode === "nocam"
-                  ? "No camera, so Gerald only tracks water and screen time. Tap “I drank water” when you sip. Posture, phone, yawning and the rest stay off."
+                  ? "No camera, so Gerald only tracks water and screen time. Tap “I just drank water” when you sip. Posture, phone, yawning and the rest stay off."
                 : mode === "camera"
                   ? "Sit comfortably, calibrate your posture, and let Gerald keep you company."
                   : "Turn on your camera and Gerald will look out for you."}
@@ -864,18 +864,19 @@ function PlantApp() {
               </p>
             )}
 
-            {mode === "camera" && (
+            {(mode === "camera" || mode === "nocam") && (
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                {!baseline ? (
-                  <button
-                    onClick={calibrateNow}
-                    className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-                  >
-                    I am sitting up straight — remember this
-                  </button>
-                ) : (
-                  <span className="text-sm text-primary">Posture baseline saved.</span>
-                )}
+                {mode === "camera" &&
+                  (!baseline ? (
+                    <button
+                      onClick={calibrateNow}
+                      className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                    >
+                      I am sitting up straight — remember this
+                    </button>
+                  ) : (
+                    <span className="text-sm text-primary">Posture baseline saved.</span>
+                  ))}
                 {quietUntil ? (
                   <button
                     onClick={() => goQuiet(null)}
@@ -902,12 +903,14 @@ function PlantApp() {
                 >
                   I just drank water
                 </button>
-                <button
-                  onClick={askGerald}
-                  className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary"
-                >
-                  What does my posture look like right now?
-                </button>
+                {mode === "camera" && (
+                  <button
+                    onClick={askGerald}
+                    className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary"
+                  >
+                    What does my posture look like right now?
+                  </button>
+                )}
                 <button
                   onClick={stopAll}
                   className="rounded-xl border border-border px-4 py-2 text-sm hover:border-destructive"
