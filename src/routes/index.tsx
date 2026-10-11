@@ -38,7 +38,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Slouch for two minutes and your desk plant audibly despairs. Drink water and it throws a gospel choir.",
+          "Slouch for five seconds and your desk plant audibly despairs. Drink water and it throws a gospel choir.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
