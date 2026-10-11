@@ -14,7 +14,7 @@
 - [ ] Tiger Data streak history — blocked: needs Lovable Cloud enabled
 - [x] Custom domain for the app — done with sigh-cus.design; fernforgivemenot.live was not bought and is not needed
 - [x] Code is on GitHub at github.com/KeertiUmadi/Sigh-cus — 86 project files plus a README, pushed through the linked GitHub connection
-- [x] Copy the code into the team repo github.com/ShubhangiPurohit-dev/Sigh-cus — dropped: not needed, Keerti's repo already carries the current published code (pushed 05:11 UTC today)
+- [x] Copy the code into the team repo github.com/ShubhangiPurohit-dev/Sigh-cus — done after Shubhangi added Keerti as a collaborator: all 87 files on main, verified the copy reads as real source and contains the six new habits
 - [x] Hand the user a zip of the project files — saved as guilt-trip-plant.zip in Files
 - [x] Publish the app so anyone with a link can open it — live at https://sigh-cus.design (public visibility)
 - [x] Rename the app to Sigh-cus everywhere — page title, heading, tracks page, README, and the address itself
