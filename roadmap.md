@@ -26,6 +26,6 @@
 - [x] Connect sigh-cus.design to the app — verified live: status active, set as primary, A record and proof text both ok
 - [x] www.sigh-cus.design — verified live and active; it forwards to sigh-cus.design (the main address)
 - [x] Make the camera preview show more of the room — the video now spans the full page width and requests a 1280x720 feed; verified in a test browser (1112x626 preview, picture live, layout below intact)
-- [ ] Republish so the wider camera preview reaches https://sigh-cus.design
+- [x] Republish so the wider camera preview reaches https://sigh-cus.design — published with the new habits
 - [x] Six new habits (frown/squint, staring, leaning close, nail-biting, yawning, phone) with sarcastic "you fixed it" lines; faster timings (thirst 1 min, slouch/away/stare/close 10 s, frown/nails/yawn 5 s, phone 20 s)
-- [ ] Publish the new habits to https://sigh-cus.design — waiting on the user's go-ahead
+- [x] Publish the new habits to https://sigh-cus.design — publishing requested for the public site
