@@ -9,7 +9,7 @@ Live at https://sigh-cus.design (https://www.sigh-cus.design forwards there).
 ## What it does
 
 - **Watches you through your webcam.** MediaPipe FaceLandmarker runs in the browser and measures the geometry of your face frame by frame. A Gemini call turns what it sees into a verdict and a fresh guilt line. Only a small, downscaled snapshot is sent for a verdict — never a video stream.
-- **Confirms when you fix it.** Sit up straight for 3 seconds after a slouch nag and Gerald admits it, backhanded: *"Oh, a straight spine, look at you doing the bare minimum."*
+- **Confirms when you fix it.** Sit up straight after a slouch nag and Gerald admits it, backhanded: *"Oh, a straight spine, look at you doing the bare minimum."*
 - **Notices water.** Tip your chin up with a bottle or cup for a moment and Gerald celebrates like you've just saved the rainforest. Gemini double-checks the frame for a cup or bottle before counting it, and there's an **"I just drank water"** button for when the camera misses a sip.
 - **Keeps score.** A mood trail runs across the session with a marker on every sip and every slouch.
 - **Follows you out of the tab.** "Float Gerald over other windows" pops the plant into a small always-on-top window (Document Picture-in-Picture) so he keeps reacting while you work somewhere else. Desktop Chrome and Edge.
@@ -45,10 +45,10 @@ Gerald keeps typing until you press **"Fine, I'll Speak"** under the pot. Then h
 | Thirst nag | after 1 minute without a sip |
 | Screen-time nag | after 60 minutes |
 | "You left" detection | after 5 seconds with no face in frame |
-| A sip looks like | chin tipped up, held 1.2 seconds |
+| A sip looks like | chin tipped up, held under a second (a hand or cup at the mouth helps) |
 | One sip counts as one | 20-second cooldown |
-| Sitting up confirms | 3 seconds upright |
-| Stopping a habit confirms | 2 seconds (a blink ends a stare at once) |
+| Sitting up confirms | instantly |
+| Stopping a habit confirms | instantly |
 
 ## Run it
 
