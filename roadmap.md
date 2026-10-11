@@ -1,5 +1,7 @@
 # Sigh-cus — build roadmap
 
+- [x] Improve calibrated slouch detection and restore Gerald’s always-on-top window; 29 tests pass and floating window opens, receives live demo reactions, and closes without errors. Publish and synchronize both GitHub copies. Real-camera accuracy and OS-level window stacking need user verification; desktop Chrome/Edge required.
+
 - [x] Restore camera button contrast and remove demo invitations; verified readable camera label in preview and public-host layout with no demo text or runtime errors.
 - [x] Request publication of the camera label and wording corrections; synchronize the changed files to both GitHub copies, preserving existing UI and detection changes.
 

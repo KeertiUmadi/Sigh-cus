@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plant } from "@/components/Plant";
 import { Button } from "@/components/ui/button";
 import { TriggerSettings } from "@/components/TriggerSettings";
+import { FloatingGerald, useFloatingGerald } from "@/components/FloatingGerald";
 import {
   ArrowUpRight,
   Camera,
@@ -198,6 +199,33 @@ function PlantApp() {
   const sensor = useFaceSensor(onReading);
   const { videoRef, start, stop, status, error, captureFrame } = sensor;
   const [geraldOpen, setGeraldOpen] = useState(false);
+  const floating = useFloatingGerald(sensor.setFrameSource);
+  async function openGeraldCorner() {
+    try {
+      await floating.open();
+      setGeraldOpen(false);
+      setVoiceNote(null);
+    } catch (e) {
+      setGeraldOpen(true);
+      setVoiceNote((e as Error).message);
+    }
+  }
+
+  // Each camera/chair needs its own upright reference, not demo proportions.
+  useEffect(() => {
+    if (mode !== "camera" || status !== "running" || baseline) return;
+    calibSamples.current = [];
+    collecting.current = true;
+    setVoiceNote("Sit upright for a few seconds while Gerald remembers your posture…");
+    const id = window.setTimeout(() => {
+      collecting.current = false;
+      try {
+        setBaseline(calibrate(calibSamples.current));
+        setVoiceNote(null);
+      } catch (e) { setVoiceNote((e as Error).message); }
+    }, 2500);
+    return () => { window.clearTimeout(id); collecting.current = false; };
+  }, [mode, status, baseline]);
 
   useEffect(() => {
     if (!geraldOpen) return;
@@ -415,8 +443,10 @@ function PlantApp() {
   useEffect(() => {
     if (mode === "off") return;
     lastAt.current = Date.now();
-    const id = window.setInterval(() => {
+    const clock = floating.floatingWindow ?? window;
+    const id = clock.setInterval(() => {
       const base = baseRef.current ?? SYNTH_BASELINE;
+      if (modeRef.current === "camera" && !baseRef.current) { lastAt.current = Date.now(); return; }
       const now = Date.now();
       const dt = Math.min(2000, now - lastAt.current) * speedRef.current;
       lastAt.current = now;
@@ -461,8 +491,8 @@ function PlantApp() {
       }
       if (out.events.length) void react(out.events);
     }, 200);
-    return () => window.clearInterval(id);
-  }, [mode, commit, react]);
+    return () => clock.clearInterval(id);
+  }, [mode, commit, react, floating.floatingWindow]);
 
   // persist
   useEffect(() => {
@@ -477,6 +507,7 @@ function PlantApp() {
   }, []);
 
   async function beginCamera() {
+    setBaseline(null);
     // Some browsers (older Safari, embedded frames) throw here — never let it block the camera.
     try {
       if ("Notification" in window && Notification.permission === "default") {
@@ -690,9 +721,9 @@ function PlantApp() {
             </div>
           </div>
           <div className="plant-actions">
-            <Button variant="outline" size="sm" onClick={() => setGeraldOpen((open) => !open)}>
+            <Button variant="outline" size="sm" onClick={() => floating.floatingWindow ? floating.close() : geraldOpen ? setGeraldOpen(false) : void openGeraldCorner()}>
               <MessageCircle className="mr-2 h-4 w-4" />
-              {geraldOpen ? "Close Gerald’s corner" : "Open Gerald’s corner"}
+              {floating.floatingWindow || geraldOpen ? "Close Gerald’s corner" : "Open Gerald’s corner"}
             </Button>
             <Button
               variant={voiceOn ? "default" : "outline"}
@@ -977,6 +1008,15 @@ function PlantApp() {
         </span>
         <span>A desk companion with a flair for the dramatic.</span>
       </footer>
+      {floating.floatingWindow && <FloatingGerald window={floating.floatingWindow} sourceVideo={videoRef.current}>
+        <div className="floating-gerald-plant"><Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} /></div>
+        <p className="floating-gerald-message" aria-live="polite">{bubble?.line ?? "I’m rooting for you. And quietly judging your posture."}</p>
+        <div className="floating-gerald-actions">
+          <Button variant="outline" size="sm" onClick={() => { window.focus(); floating.close(); }}>Back to Sigh-cus <ArrowUpRight /></Button>
+          {active && <Button variant="outline" size="sm" onClick={drankByHand}><Droplets />I drank water</Button>}
+          <Button variant="outline" size="sm" onClick={floating.close}><X />Close</Button>
+        </div>
+      </FloatingGerald>}
       <aside className="gerald-widget" aria-label="Gerald’s corner">
         {geraldOpen && (
           <section
@@ -1033,7 +1073,7 @@ function PlantApp() {
           aria-label={geraldOpen ? "Close Gerald’s corner" : "Open Gerald’s corner"}
           aria-expanded={geraldOpen}
           aria-controls="gerald-corner"
-          onClick={() => setGeraldOpen((open) => !open)}
+          onClick={() => floating.floatingWindow ? floating.close() : geraldOpen ? setGeraldOpen(false) : void openGeraldCorner()}
         >
           {geraldOpen ? (
             <X size={23} />

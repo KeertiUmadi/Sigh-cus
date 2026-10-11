@@ -159,7 +159,8 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
         const id = requestAnimationFrame(loop);
         cancelRef.current = () => cancelAnimationFrame(id);
       }
-      const v = videoRef.current;
+      const floatingVideo = fw && !fw.closed ? fw.document.querySelector<HTMLVideoElement>(".floating-camera") : null;
+      const v = floatingVideo && floatingVideo.readyState >= 2 ? floatingVideo : videoRef.current;
       const lm = landmarkerRef.current;
       if (!v || !lm || v.readyState < 2) return;
 

@@ -52,6 +52,25 @@ function advance(
 }
 
 describe("posture and drink detection", () => {
+  it("catches a moderate head drop combined with sinking in the chair", () => {
+    expect(isSlouch({ ...upright, pitch: 0.96, frameY: 0.40 }, baseline)).toBe(true);
+  });
+  it("does not mistake moving closer alone or a small glance for slouching", () => {
+    expect(isSlouch({ ...upright, eyeDist: 0.28 }, baseline)).toBe(false);
+    expect(isSlouch({ ...upright, pitch: 0.90 }, baseline)).toBe(false);
+  });
+  it("handles a near-zero calibrated pitch without flagging small movements", () => {
+    expect(isSlouch({ ...upright, pitch: 0.03 }, { ...baseline, pitch: 0 })).toBe(false);
+  });
+  it("ignores a brief slouch then confirms a sustained one and its correction", () => {
+    const moderate = { ...upright, pitch: 0.96, frameY: 0.40 };
+    const brief = advance(createState(0), moderate, 2);
+    expect(brief.events).toEqual([]);
+    expect(advance(brief.state, upright, 1).state.slouchMs).toBe(0);
+    const nag = advance(createState(0), moderate, 5);
+    expect(nag.events.some((e) => e.kind === "slouch")).toBe(true);
+    expect(advance(nag.state, upright, 1).events.some((e) => e.kind === "fixed" && e.of === "slouch")).toBe(true);
+  });
   it("counts a dropped head as a slouch but not good posture", () => {
     expect(isSlouch(slouching, baseline)).toBe(true);
     expect(isSlouch(upright, baseline)).toBe(false);

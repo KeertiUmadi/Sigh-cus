@@ -504,6 +504,12 @@ button:disabled {
 .start-actions button:nth-child(2) {
   background: var(--background);
 }
+.floating-gerald-body { margin: 0; background: var(--background); color: var(--foreground); }
+.floating-gerald-content { display: grid; gap: 12px; padding: 16px; }
+.floating-gerald-plant { height: 190px; }
+.floating-gerald-message { font-size: 14px; line-height: 1.5; }
+.floating-gerald-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.floating-camera { width: 72px; height: 40px; object-fit: contain; border-radius: 6px; }
 .privacy-note {
   display: flex;
   align-items: flex-start;

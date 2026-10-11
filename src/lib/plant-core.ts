@@ -92,7 +92,7 @@ export const RULES = {
 export const SENSITIVITY = {
   /** head dropped: nose this much further below the eyes than when calibrated */
   slouchPitchRatio: 1.22,
-  slouchFrameY: 0.07,
+  slouchFrameY: 0.04,
   slouchEyeRatio: 1.25,
   /** mouth this much more open than at rest */
   drinkGapAdd: 0.1,
@@ -252,15 +252,16 @@ export function calibrate(readings: Reading[]): Baseline {
  */
 export function isSlouch(r: Reading, b: Baseline) {
   if (!r.faceVisible) return false;
-  const pitchDrop = r.pitch > b.pitch * SENSITIVITY.slouchPitchRatio;
+  // Additive pitch floor avoids unstable ratios for nearly level/negative baselines.
+  const pitchChange = r.pitch - b.pitch;
+  const pitchDrop = pitchChange > Math.max(0.10, Math.abs(b.pitch) * 0.18);
   const sunk = r.frameY > b.frameY + SENSITIVITY.slouchFrameY;
   const leaned = r.eyeDist > b.eyeDist * SENSITIVITY.slouchEyeRatio;
   const hits = Number(pitchDrop) + Number(sunk) + Number(leaned);
   if (hits >= 2) return true;
   return (
-    r.pitch > b.pitch * (SENSITIVITY.slouchPitchRatio + 0.18) ||
-    r.frameY > b.frameY + SENSITIVITY.slouchFrameY * 2 ||
-    r.eyeDist > b.eyeDist * (SENSITIVITY.slouchEyeRatio + 0.2)
+    pitchChange > Math.max(0.22, Math.abs(b.pitch) * 0.35) ||
+    r.frameY > b.frameY + 0.10
   );
 }
 
