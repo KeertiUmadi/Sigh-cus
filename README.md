@@ -45,7 +45,7 @@ Gerald keeps typing until you press **"Fine, I'll Speak"** under the pot. Then h
 | Thirst nag | after 1 minute without a sip |
 | Screen-time nag | after 60 minutes |
 | "You left" detection | after 5 seconds with no face in frame |
-| A sip looks like | chin tipped up, held under a second (a hand or cup at the mouth helps) |
+| A sip looks like | chin tipped up, held for 3 seconds (a hand or cup at the mouth helps) |
 | One sip counts as one | 20-second cooldown |
 | Sitting up confirms | instantly |
 | Stopping a habit confirms | instantly |

@@ -119,7 +119,7 @@ describe("drinking water", () => {
     const warmed = advance(createState(0), slouching, 60);
     expect(warmed.state.slouchMs).toBe(60_000);
 
-    const { state, events } = advance(warmed.state, drinking, 3, 500);
+    const { state, events } = advance(warmed.state, drinking, 8, 500);
     expect(events.map((e) => e.kind)).toContain("drink");
     expect(state.drinkCount).toBe(1);
     expect(state.drinkStreak).toBe(1);
