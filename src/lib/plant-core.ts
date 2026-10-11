@@ -304,8 +304,10 @@ export function habitSignals(r: Reading, b: Baseline): Record<Habit, boolean> {
     yawn: v && (r.jawOpen ?? 0) > 0.55 && !isDrink(r, b),
     // Looking down at a phone often also drops the head: slouch must not veto it.
     // This is a posture inference, not object recognition.
-    phone: v && ((r.lookDown ?? 0) > 0.35 ||
-      (!!r.handBelowFace && r.pitch > b.pitch * SENSITIVITY.slouchPitchRatio)),
+    // A hand partly in frame below the face plus any downward glance is enough.
+    phone: v && !r.handAtMouth && ((r.lookDown ?? 0) > 0.25 ||
+      (!!r.handBelowFace && ((r.lookDown ?? 0) > 0.12 ||
+        r.pitch > b.pitch * (1 + (SENSITIVITY.slouchPitchRatio - 1) * 0.5)))),
   };
 }
 

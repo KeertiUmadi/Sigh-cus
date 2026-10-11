@@ -26,6 +26,8 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
   } | null>(null);
   const handAtMouthRef = useRef(false);
   const handBelowFaceRef = useRef(false);
+  const handBelowAtRef = useRef(-Infinity);
+  const handMouthAtRef = useRef(-Infinity);
   const lastBlinkAtRef = useRef<number | undefined>(undefined);
   const handTickRef = useRef(0);
   const streamRef = useRef<MediaStream | null>(null);
@@ -211,19 +213,25 @@ export function useFaceSensor(onReading: (reading: Reading) => void) {
           const hr = hands.detectForVideo(v, now);
           const mx = (px(13) + px(14)) / 2;
           const my = (py(13) + py(14)) / 2;
-          handAtMouthRef.current = (hr.landmarks ?? []).some((hand) =>
-            [4, 8, 12, 16, 20].some((i) => {
+          const atMouthNow = (hr.landmarks ?? []).some((hand) =>
+            [3, 4, 7, 8, 11, 12, 15, 16, 19, 20].some((i) => {
               const p = hand[i];
-              return p && Math.hypot(p.x * W - mx, p.y * H - my) < eyeDist * 0.9;
+              return p && Math.hypot(p.x * W - mx, p.y * H - my) < eyeDist * 1.6;
             }),
           );
-          handBelowFaceRef.current = (hr.landmarks ?? []).some((hand) => {
-            const palm = hand[9];
-            return palm && palm.y * H > my + eyeDist * 0.5 &&
-              Math.abs(palm.x * W - mx) < eyeDist * 3;
-          });
+          // latch ~1.5 s: fingers over the mouth make the hand tracker flicker
+          if (atMouthNow) handMouthAtRef.current = now;
+          handAtMouthRef.current = now - handMouthAtRef.current < 1500;
+          // Phone hands are often partly out of frame: any visible landmark below the
+          // mouth counts, and the sighting is latched ~2 s to ride out tracker dropouts.
+          const belowNow = !handAtMouthRef.current && (hr.landmarks ?? []).some((hand) =>
+            hand.some((p) => p && p.y * H > my + eyeDist * 0.3 &&
+              Math.abs(p.x * W - mx) < eyeDist * 4.5),
+          );
+          if (belowNow) handBelowAtRef.current = now;
+          handBelowFaceRef.current = !handAtMouthRef.current && now - handBelowAtRef.current < 2000;
         } catch {
-          handAtMouthRef.current = false;
+          handAtMouthRef.current = now - handMouthAtRef.current < 1500;
           handBelowFaceRef.current = false;
         }
       }

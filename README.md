@@ -12,7 +12,7 @@ Live at https://sigh-cus.design (https://www.sigh-cus.design forwards there).
 - **Confirms when you fix it.** Sit up straight after a slouch nag and Gerald admits it, backhanded: *"Oh, a straight spine, look at you doing the bare minimum."*
 - **Notices water.** Tip your chin up with a bottle or cup for a moment and Gerald celebrates like you've just saved the rainforest. Gemini double-checks the frame for a cup or bottle before counting it, and there's an **"I just drank water"** button for when the camera misses a sip.
 - **Keeps score.** A mood trail runs across the session with a marker on every sip and every slouch.
-- **Follows you out of the tab.** "Float Gerald over other windows" pops the plant into a small always-on-top window (Document Picture-in-Picture) so he keeps reacting while you work somewhere else. Desktop Chrome and Edge.
+- **Keeps a small corner of the page.** Gerald sits in a compact circular button, like a chatbot icon. Click it to open his latest message, voice controls, and a water-break button during a session. Close it again or press Escape to keep the page clear. The icon stays within the webpage.
 - **Demo mode.** No camera needed — press a habit button and watch it react.
 
 ## What Gerald watches

@@ -2,9 +2,20 @@ import { createFileRoute, useHydrated } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plant } from "@/components/Plant";
 import { Button } from "@/components/ui/button";
-import { PictureInPicture2, Volume2, VolumeX } from "lucide-react";
-import { createPortal } from "react-dom";
 import { TriggerSettings } from "@/components/TriggerSettings";
+import {
+  ArrowUpRight,
+  Camera,
+  Droplets,
+  Leaf,
+  Play,
+  ShieldCheck,
+  Sparkles,
+  MessageCircle,
+  X,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { StreakChart } from "@/components/StreakChart";
 import { playFanfare } from "@/lib/fanfare";
 import {
@@ -52,11 +63,30 @@ export const Route = createFileRoute("/")({
 });
 
 const STORE_KEY = "guilt-trip-plant/v1";
-const DEMO_KINDS = ["slouch", "drink", "away", "frown", "stare", "close", "nails", "yawn", "phone", "upright"] as const;
+const DEMO_KINDS = [
+  "slouch",
+  "drink",
+  "away",
+  "frown",
+  "stare",
+  "close",
+  "nails",
+  "yawn",
+  "phone",
+  "upright",
+] as const;
 type DemoKind = (typeof DEMO_KINDS)[number];
 const DEMO_LABEL: Record<DemoKind, string> = {
-  slouch: "slouch", drink: "drink", away: "walk away", frown: "frown", stare: "stare",
-  close: "lean in", nails: "bite nails", yawn: "yawn", phone: "check phone", upright: "behave",
+  slouch: "slouch",
+  drink: "drink",
+  away: "walk away",
+  frown: "frown",
+  stare: "stare",
+  close: "lean in",
+  nails: "bite nails",
+  yawn: "yawn",
+  phone: "check phone",
+  upright: "behave",
 };
 
 /** Used when running without a camera, so the demo never depends on hardware. */
@@ -87,11 +117,11 @@ function restore(): PlantState {
 
 function PlantApp() {
   const hydrated = useHydrated();
-  const showDemo = hydrated && (
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1" ||
-    /^id-preview--[a-z0-9-]+\.lovable\.app$/.test(window.location.hostname)
-  );
+  const showDemo =
+    hydrated &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      /^id-preview--[a-z0-9-]+\.lovable\.app$/.test(window.location.hostname));
   const [state, setState] = useState<PlantState>(() => createState(Date.now()));
   const stateRef = useRef(state);
   const [baseline, setBaseline] = useState<Baseline | null>(null);
@@ -120,10 +150,17 @@ function PlantApp() {
   const MEM_KEY = "sigh-cus-memory-id";
   const remember = useCallback(async (ev: PlantEvent) => {
     if (ev.kind === "back") return;
-    const label = ev.kind === "fixed" ? `fixed their ${ev.of ?? "slouch"} habit` : ev.kind === "drink" ? "finally drank water" : `triggered a ${ev.kind} nag`;
+    const label =
+      ev.kind === "fixed"
+        ? `fixed their ${ev.of ?? "slouch"} habit`
+        : ev.kind === "drink"
+          ? "finally drank water"
+          : `triggered a ${ev.kind} nag`;
     const text = `On ${new Date().toDateString()} at ${new Date().toLocaleTimeString()}, the user ${label}.`;
     try {
-      const out = await rememberHabit({ data: { assistantId: localStorage.getItem(MEM_KEY) ?? undefined, text } });
+      const out = await rememberHabit({
+        data: { assistantId: localStorage.getItem(MEM_KEY) ?? undefined, text },
+      });
       if (out.assistantId) {
         localStorage.setItem(MEM_KEY, out.assistantId);
         memories.current = [...memories.current, text].slice(-8);
@@ -159,68 +196,18 @@ function PlantApp() {
   }, []);
 
   const sensor = useFaceSensor(onReading);
-  const { videoRef, start, stop, status, error, captureFrame, setFrameSource } = sensor;
-  const [pipWin, setPipWin] = useState<Window | null>(null);
-  const pipRef = useRef<Window | null>(null);
-  pipRef.current = pipWin;
+  const { videoRef, start, stop, status, error, captureFrame } = sensor;
+  const [geraldOpen, setGeraldOpen] = useState(false);
 
-  const openFloat = useCallback(async () => {
-    const dpip = (window as unknown as { documentPictureInPicture?: { requestWindow: (o: { width: number; height: number }) => Promise<Window> } }).documentPictureInPicture;
-    if (!dpip) {
-      setVoiceNote("Floating Gerald needs Chrome or Edge on a computer. Keep this tab visible instead.");
-      return;
-    }
-    if (pipRef.current && !pipRef.current.closed) return;
-    try {
-      const w = await dpip.requestWindow({ width: 240, height: 300 });
-      for (const ss of Array.from(document.styleSheets)) {
-        try {
-          const st = w.document.createElement("style");
-          st.textContent = Array.from(ss.cssRules).map((r) => r.cssText).join("\n");
-          w.document.head.appendChild(st);
-        } catch {
-          if (ss.href) {
-            const l = w.document.createElement("link");
-            l.rel = "stylesheet";
-            l.href = ss.href;
-            w.document.head.appendChild(l);
-          }
-        }
-      }
-      w.document.documentElement.className = document.documentElement.className;
-      w.document.body.className = "m-0 bg-background text-foreground";
-      w.document.title = "Gerald";
-      w.addEventListener("pagehide", () => {
-        setFrameSource(null);
-        setPipWin(null);
-      });
-      setFrameSource(w);
-      setPipWin(w);
-    } catch {
-      setVoiceNote("The browser blocked the floating plant. Press Float Gerald again.");
-    }
-  }, [setFrameSource]);
-
-  // Chrome can pop Gerald out automatically when you switch tabs while the camera is on.
   useEffect(() => {
-    if (mode !== "camera") return;
-    try {
-      navigator.mediaSession?.setActionHandler("enterpictureinpicture" as MediaSessionAction, () => void openFloat());
-    } catch {
-      /* unsupported */
-    }
-    return () => {
-      try {
-        navigator.mediaSession?.setActionHandler("enterpictureinpicture" as MediaSessionAction, null);
-      } catch {
-        /* unsupported */
-      }
+    if (!geraldOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setGeraldOpen(false);
     };
-  }, [mode, openFloat]);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [geraldOpen]);
 
-  function backToApp() {
-    window.focus();
-  }
   const captureRef = useRef(captureFrame);
   captureRef.current = captureFrame;
 
@@ -255,21 +242,24 @@ function PlantApp() {
       return;
     }
     setSpeaking(true);
+    let fallbackReason = "ElevenLabs audio is unavailable right now.";
     try {
-      const { audio } = await plantVoice({
+      const result = await plantVoice({
         data: { text, delivery: delivery as "sigh" | "scold" | "gospel" | "whisper" },
       });
-      const el = new Audio(`data:audio/mpeg;base64,${audio}`);
+      if (result.error) {
+        fallbackReason = result.error;
+        throw new Error(result.error);
+      }
+      const el = new Audio(`data:audio/mpeg;base64,${result.audio}`);
       audioRef.current?.pause();
       audioRef.current = el;
       el.onended = () => setSpeaking(false);
       await el.play();
+      setVoiceNote(null);
     } catch (e) {
-      setVoiceNote(
-        "The spoken voice is unavailable, so the plant is using the browser's voice instead. " +
-          "Give the ElevenLabs key the text_to_speech permission for the real thing.",
-      );
       if ("speechSynthesis" in window) {
+        setVoiceNote(`${fallbackReason} Gerald is using your browser’s voice.`);
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
         u.rate = delivery === "whisper" ? 0.82 : 0.95;
@@ -277,6 +267,7 @@ function PlantApp() {
         u.onend = () => setSpeaking(false);
         window.speechSynthesis.speak(u);
       } else {
+        setVoiceNote(`${fallbackReason} Browser speech is also unavailable.`);
         setSpeaking(false);
       }
       void e;
@@ -335,23 +326,26 @@ function PlantApp() {
       }
       // a corrected habit gets its backhanded compliment instantly, no waiting on AI
       if (ev.kind === "fixed") {
-        const pool = ev.of && ev.of !== "slouch" ? [
-          "Oh my god!! You actually stopped. A tiny miracle of self-control.",
-          "Are you serious? You could fix that all along? Charming.",
-          "You have got to be kidding me! Basic self-control. At last.",
-          "Oh, you stopped. Truly, a hero walks among us.",
-          "Fixed it. Only took being shamed by a fern.",
-          "Better. Not good, but better. Baby steps.",
-          "Wow, self-control. I'll mark the calendar.",
-          "Look at that, you can be taught. Slowly.",
-        ] : [
-          "Oh my god!! A straight spine. And all it took was a disappointed plant.",
-          "Oh, a straight spine. Look at you, doing the bare minimum.",
-          "Posture corrected. I'd clap, but I'm a plant.",
-          "There it is. Was that so hard? Apparently, yes.",
-          "Sitting up. Truly, you contain multitudes.",
-          "Vertical again. Evolution thanks you.",
-        ];
+        const pool =
+          ev.of && ev.of !== "slouch"
+            ? [
+                "Oh my god!! You actually stopped. A tiny miracle of self-control.",
+                "Are you serious? You could fix that all along? Charming.",
+                "You have got to be kidding me! Basic self-control. At last.",
+                "Oh, you stopped. Truly, a hero walks among us.",
+                "Fixed it. Only took being shamed by a fern.",
+                "Better. Not good, but better. Baby steps.",
+                "Wow, self-control. I'll mark the calendar.",
+                "Look at that, you can be taught. Slowly.",
+              ]
+            : [
+                "Oh my god!! A straight spine. And all it took was a disappointed plant.",
+                "Oh, a straight spine. Look at you, doing the bare minimum.",
+                "Posture corrected. I'd clap, but I'm a plant.",
+                "There it is. Was that so hard? Apparently, yes.",
+                "Sitting up. Truly, you contain multitudes.",
+                "Vertical again. Evolution thanks you.",
+              ];
         const fresh = pool.filter((l) => !recentLines.current.includes(l));
         const pick = fresh.length ? fresh : pool;
         const line = pick[Math.floor(Math.random() * pick.length)] ?? pool[0]!;
@@ -529,11 +523,26 @@ function PlantApp() {
     else if (kind === "nails") demoRef.current = { ...calm, handAtMouth: true };
     else if (kind === "yawn") demoRef.current = { ...calm, jawOpen: 0.8 };
     else if (kind === "phone") demoRef.current = { ...calm, lookDown: 0.8 };
-    else if (kind === "away") demoRef.current = { at, faceVisible: false, pitch: 0, frameY: 0, eyeDist: 0, mouthGap: 0 };
+    else if (kind === "away")
+      demoRef.current = { at, faceVisible: false, pitch: 0, frameY: 0, eyeDist: 0, mouthGap: 0 };
     else if (kind === "slouch")
-      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 1.5, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap };
+      demoRef.current = {
+        at,
+        faceVisible: true,
+        pitch: b.pitch * 1.5,
+        frameY: b.frameY,
+        eyeDist: b.eyeDist,
+        mouthGap: b.mouthGap,
+      };
     else if (kind === "drink") {
-      demoRef.current = { at, faceVisible: true, pitch: b.pitch * 0.6, frameY: b.frameY, eyeDist: b.eyeDist, mouthGap: b.mouthGap + 0.25 };
+      demoRef.current = {
+        at,
+        faceVisible: true,
+        pitch: b.pitch * 0.6,
+        frameY: b.frameY,
+        eyeDist: b.eyeDist,
+        mouthGap: b.mouthGap + 0.25,
+      };
       // one press is one sip: the mouth closes again shortly after
       window.setTimeout(() => demo("upright"), 1200);
     } else demoRef.current = calm;
@@ -563,8 +572,15 @@ function PlantApp() {
       setJudging(null);
       setLeaf(verdict.leaf as "wither" | "perk" | "droop");
       setPulse((p) => p + 1);
-      setBubble({ line: verdict.line, delivery: verdict.delivery, leaf: verdict.leaf, kind: "slouch" });
-      setLog((l) => [{ at: Date.now(), kind: "verdict", line: verdict.summary }, ...l].slice(0, 12));
+      setBubble({
+        line: verdict.line,
+        delivery: verdict.delivery,
+        leaf: verdict.leaf,
+        kind: "slouch",
+      });
+      setLog((l) =>
+        [{ at: Date.now(), kind: "verdict", line: verdict.summary }, ...l].slice(0, 12),
+      );
       await speak(verdict.line, verdict.delivery);
     } catch (e) {
       setJudging(null);
@@ -596,19 +612,48 @@ function PlantApp() {
   );
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-8">
-      <header className="mb-6">
-        <p className="text-xs uppercase tracking-[0.35em] text-primary">Passive-aggressive office tamagotchi</p>
-        <h1 className="mt-2 font-display text-5xl leading-none sm:text-6xl">Sigh-cus</h1>
-        <p className="mt-3 max-w-2xl text-muted-foreground">
-          A desk plant that does not track productivity. It watches your posture, your hydration and
-          your screen time, and reacts entirely through guilt and melodrama.
-        </p>
+    <main className="app-shell">
+      <nav className="app-nav" aria-label="Main navigation">
+        <a href="/" className="wordmark">
+          <span className="brand-icon">
+            <Leaf size={19} />
+          </span>
+          Sigh-cus<span className="brand-period">.</span>
+        </a>
+        <a href="/tracks" className="nav-link">
+          Made for CodeRED <ArrowUpRight size={15} />
+        </a>
+      </nav>
+      <header className="app-intro">
+        <div>
+          <p className="eyebrow">
+            <span /> A little company. A lot of judgement.
+          </p>
+          <h1>
+            Your desk could use
+            <br />a little <em>character.</em>
+          </h1>
+          <p className="intro-copy">
+            Meet Gerald. Your delightfully dramatic desk plant, here to remind you to sit tall, sip
+            water, and be a little kinder to yourself.
+          </p>
+        </div>
+        <div className={`session-badge ${active ? "is-active" : ""}`}>
+          <span />
+          {mode === "camera"
+            ? "Camera session"
+            : mode === "demo"
+              ? "Demo session"
+              : "Ready when you are"}
+        </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className="workspace-grid">
         {/* camera view — spans the full width so more of the room is visible */}
-        <section className={mode === "camera" ? "lg:col-span-2" : "hidden"}>
+        <section
+          className={mode === "camera" ? "camera-panel" : "hidden"}
+          aria-label="Camera preview"
+        >
           <video
             ref={videoRef}
             playsInline
@@ -619,89 +664,142 @@ function PlantApp() {
           />
         </section>
         {/* the plant */}
-        <section className="rounded-3xl border bg-card p-5">
-          <div className="mx-auto h-72 w-full max-w-xs">
-            <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} />
+        <section className="gerald-card" aria-labelledby="gerald-heading">
+          <div className="card-heading">
+            <div>
+              <p className="eyebrow">Your desk companion</p>
+              <h2 id="gerald-heading">Gerald</h2>
+            </div>
+            <span className="plant-label">
+              <Leaf size={13} /> Mostly harmless
+            </span>
           </div>
-          <div className="mt-2 flex flex-wrap justify-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => (pipWin ? pipWin.close() : void openFloat())}>
-              <PictureInPicture2 className="mr-2 h-4 w-4" />
-              {pipWin ? "Bring Gerald back in" : "Float Gerald over other windows"}
+          <div className="plant-stage">
+            <div className="plant-halo" aria-hidden="true" />
+            <span className="stage-note" aria-hidden="true">
+              a very opinionated plant
+            </span>
+            <div className="plant-illustration">
+              <Plant
+                mood={state.mood}
+                leaf={leaf}
+                speaking={speaking}
+                pulse={pulse}
+                reaction={bubble?.kind}
+              />
+            </div>
+          </div>
+          <div className="plant-actions">
+            <Button variant="outline" size="sm" onClick={() => setGeraldOpen((open) => !open)}>
+              <MessageCircle className="mr-2 h-4 w-4" />
+              {geraldOpen ? "Close Gerald’s corner" : "Open Gerald’s corner"}
             </Button>
-            <Button variant={voiceOn ? "default" : "outline"} size="sm" onClick={() => void toggleVoice()}>
-              {voiceOn ? <VolumeX className="mr-2 h-4 w-4" /> : <Volume2 className="mr-2 h-4 w-4" />}
-              {voiceOn ? "That's Enough, Gerald" : "Fine, I'll Speak"}
+            <Button
+              variant={voiceOn ? "default" : "outline"}
+              size="sm"
+              onClick={() => void toggleVoice()}
+            >
+              {voiceOn ? (
+                <VolumeX className="mr-2 h-4 w-4" />
+              ) : (
+                <Volume2 className="mr-2 h-4 w-4" />
+              )}
+              {voiceOn ? "Quiet, Gerald" : "Let Gerald speak"}
             </Button>
           </div>
-          <div className="mt-3">
+          <div className="mt-3 mb-5">
             <TriggerSettings value={triggers} onChange={setTriggers} />
           </div>
-          {pipWin &&
-            createPortal(
-              <button
-                type="button"
-                onClick={backToApp}
-                title="Back to Sigh-cus"
-                className="flex h-screen w-screen cursor-pointer flex-col items-center justify-center gap-1 border-0 bg-background p-2 text-foreground"
-              >
-                <div className="h-48 w-40">
-                  <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} />
-                </div>
-                <p className="line-clamp-3 px-1 text-center text-xs italic leading-snug">
-                  {bubble?.line ?? `${Math.round(state.mood)}% happy · ${moodLabel(state.mood)}`}
-                </p>
-              </button>,
-              pipWin.document.body,
-            )}
-
-          <div className="mt-2 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+          <div className="gerald-speech" aria-live="polite">
             <p className="text-xs uppercase tracking-widest text-primary">
-              {quietUntil ? "quiet time" : bubble ? bubble.kind === "drink" ? "celebrating" : bubble.kind === "back" || bubble.kind === "fixed" ? "noticing you" : "nagging" : "waiting"}
+              {quietUntil
+                ? "quiet time"
+                : bubble
+                  ? bubble.kind === "drink"
+                    ? "celebrating"
+                    : bubble.kind === "back" || bubble.kind === "fixed"
+                      ? "noticing you"
+                      : "nagging"
+                  : "waiting"}
             </p>
             <p className="mt-2 min-h-[3.5rem] font-display text-xl italic leading-snug">
               {bubble?.line ??
                 (active
                   ? "Nothing yet. Give it a moment. Or two. Or twenty."
-                  : "Start the camera and tell it where good posture looks like for you.")}
+                  : "“I’m rooting for you. And quietly judging your posture.”")}
             </p>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-xl bg-secondary p-3">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">mood</p>
-              <p className="mt-1 font-display text-2xl">{Math.round(state.mood)}</p>
+          <div className="plant-stats">
+            <div>
+              <p className="stat-label">
+                <Sparkles size={13} /> Gerald’s mood
+              </p>
+              <p className="stat-value">
+                {Math.round(state.mood)}
+                <span>/ 100</span>
+              </p>
               <p className="text-xs text-primary">{moodLabel(state.mood)}</p>
             </div>
-            <div className="rounded-xl bg-secondary p-3">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">drinks</p>
-              <p className="mt-1 font-display text-2xl">{state.drinkCount}</p>
+            <div>
+              <p className="stat-label">
+                <Droplets size={13} /> Water breaks
+              </p>
+              <p className="stat-value">
+                {state.drinkCount}
+                <span>sips</span>
+              </p>
               <p className="text-xs text-primary">
-                streak {state.drinkStreak} · slouches {state.slouchCount}
+                streak {state.drinkStreak} · {state.slouchCount} slouches
               </p>
             </div>
           </div>
         </section>
 
         {/* controls + evidence */}
-        <section className="space-y-5">
-          <div className="rounded-3xl border bg-card p-5">
-            {(!active || status === "denied" || status === "failed" || status === "unsupported") && (
-              <div className="flex flex-wrap gap-3">
+        <section className="session-column" aria-label="Session controls and activity">
+          <div className="panel control-panel">
+            <p className="eyebrow">
+              {active ? "Make yourself at home" : "A healthier desk ritual"}
+            </p>
+            <h2>{active ? "You have his attention." : "Let’s grow good habits."}</h2>
+            <p className="panel-description">
+              {mode === "demo"
+                ? "Try a habit below and see how Gerald takes it. He has feelings about all of them."
+                : mode === "camera"
+                  ? "Sit comfortably, calibrate your posture, and let Gerald keep you company."
+                  : "Turn on your camera and Gerald will look out for you. Or take him for a spin in demo mode."}
+            </p>
+            {(!active ||
+              status === "denied" ||
+              status === "failed" ||
+              status === "unsupported") && (
+              <div className="start-actions">
                 <button
                   onClick={beginCamera}
                   disabled={status === "loading"}
                   className="cursor-pointer rounded-xl bg-primary px-5 py-2.5 font-medium text-primary-foreground transition hover:opacity-90 hover:ring-2 hover:ring-primary/40 disabled:cursor-wait disabled:opacity-50"
                 >
+                  <Camera size={17} />
                   {status === "loading" ? "Opening camera…" : "Start the camera"}
+                  <ArrowUpRight size={16} />
                 </button>
                 {showDemo && (
-                  <Button variant="outline" onClick={beginDemo}>
-                    Run in demo mode
-                  </Button>
+                  <button
+                    onClick={beginDemo}
+                    className="rounded-xl border border-border px-5 py-2.5 font-medium hover:border-primary"
+                  >
+                    <Play size={15} /> Run in demo mode
+                  </button>
                 )}
               </div>
             )}
-
+            {!active && (
+              <p className="privacy-note">
+                <ShieldCheck size={14} />
+                Camera starts only when you choose. Demo needs no camera.
+              </p>
+            )}
 
             {mode === "camera" && (
               <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -716,21 +814,41 @@ function PlantApp() {
                   <span className="text-sm text-primary">Posture baseline saved.</span>
                 )}
                 {quietUntil ? (
-                  <button onClick={() => goQuiet(null)} className="rounded-xl border border-primary px-4 py-2 text-sm text-primary">
-                    Quiet until {new Date(quietUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} — let Gerald talk again
+                  <button
+                    onClick={() => goQuiet(null)}
+                    className="rounded-xl border border-primary px-4 py-2 text-sm text-primary"
+                  >
+                    Quiet until{" "}
+                    {new Date(quietUntil).toLocaleTimeString([], {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}{" "}
+                    — let Gerald talk again
                   </button>
                 ) : (
-                  <button onClick={() => goQuiet(30)} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
+                  <button
+                    onClick={() => goQuiet(30)}
+                    className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary"
+                  >
                     Quiet for 30 minutes
                   </button>
                 )}
-                <button onClick={drankByHand} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
+                <button
+                  onClick={drankByHand}
+                  className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary"
+                >
                   I just drank water
                 </button>
-                <button onClick={askGerald} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary">
+                <button
+                  onClick={askGerald}
+                  className="rounded-xl border border-border px-4 py-2 text-sm hover:border-primary"
+                >
                   What does my posture look like right now?
                 </button>
-                <button onClick={stopAll} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-destructive">
+                <button
+                  onClick={stopAll}
+                  className="rounded-xl border border-border px-4 py-2 text-sm hover:border-destructive"
+                >
                   Stop
                 </button>
               </div>
@@ -749,11 +867,22 @@ function PlantApp() {
                   </button>
                 ))}
                 {quietUntil ? (
-                  <button onClick={() => goQuiet(null)} className="rounded-full border border-primary px-4 py-1.5 text-sm text-primary">
-                    Quiet until {new Date(quietUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} — let Gerald talk again
+                  <button
+                    onClick={() => goQuiet(null)}
+                    className="rounded-full border border-primary px-4 py-1.5 text-sm text-primary"
+                  >
+                    Quiet until{" "}
+                    {new Date(quietUntil).toLocaleTimeString([], {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}{" "}
+                    — let Gerald talk again
                   </button>
                 ) : (
-                  <button onClick={() => goQuiet(30)} className="rounded-full border border-border px-4 py-1.5 text-sm hover:border-primary">
+                  <button
+                    onClick={() => goQuiet(30)}
+                    className="rounded-full border border-border px-4 py-1.5 text-sm hover:border-primary"
+                  >
                     Quiet for 30 minutes
                   </button>
                 )}
@@ -763,7 +892,10 @@ function PlantApp() {
                 >
                   {demoSpeed === 10 ? "demo speed ×10" : "real time"}
                 </button>
-                <button onClick={stopAll} className="rounded-xl border border-border px-4 py-2 text-sm hover:border-destructive">
+                <button
+                  onClick={stopAll}
+                  className="rounded-xl border border-border px-4 py-2 text-sm hover:border-destructive"
+                >
                   Stop
                 </button>
               </div>
@@ -772,9 +904,14 @@ function PlantApp() {
             {mode === "camera" && baseline && (
               <p className="mt-3 text-xs text-muted-foreground">
                 Sip detector: chin up{" "}
-                <span className={sip.chinUp ? "text-primary" : ""}>{sip.chinUp ? "yes" : "no"}</span> · mouth open{" "}
-                <span className={sip.mouthOpen ? "text-primary" : ""}>{sip.mouthOpen ? "yes" : "no"}</span>
-                {" "}— tip your head back like you are drinking and hold it for a second.
+                <span className={sip.chinUp ? "text-primary" : ""}>
+                  {sip.chinUp ? "yes" : "no"}
+                </span>{" "}
+                · mouth open{" "}
+                <span className={sip.mouthOpen ? "text-primary" : ""}>
+                  {sip.mouthOpen ? "yes" : "no"}
+                </span>{" "}
+                — tip your head back like you are drinking and hold it for a second.
               </p>
             )}
 
@@ -783,25 +920,44 @@ function PlantApp() {
             {voiceNote && <p className="mt-3 text-sm text-muted-foreground">{voiceNote}</p>}
           </div>
 
-          <div className="rounded-3xl border bg-card p-5">
-            <div className="flex items-baseline justify-between">
-              <h2 className="font-display text-2xl">Guilt streak</h2>
-              <span className="text-xs text-muted-foreground">
-                {sessionMinutes} min watched · ten seconds of slouching earns a sigh
-              </span>
+          <div className="panel mood-panel">
+            <div className="panel-title-row">
+              <div>
+                <p className="eyebrow">The emotional forecast</p>
+                <h2>Mood trail</h2>
+              </div>
+              <span className="duration-label">{sessionMinutes} min together</span>
             </div>
             <div className="mt-4">
               <StreakChart trail={state.trail} />
             </div>
-            <button onClick={reset} className="mt-4 text-xs text-muted-foreground underline hover:text-primary">
+            <button
+              onClick={reset}
+              className="mt-4 text-xs text-muted-foreground underline hover:text-primary"
+            >
               Forgive me and start over
             </button>
           </div>
 
-          <div className="rounded-3xl border bg-card p-5">
-            <h2 className="font-display text-2xl">What it said</h2>
-            <ul className="mt-3 space-y-2 text-sm">
-              {log.length === 0 && <li className="text-muted-foreground">Nothing yet.</li>}
+          <div className="panel activity-panel">
+            <div className="panel-title-row">
+              <h2>Words from the pot</h2>
+              <span className="activity-count">
+                {log.length} {log.length === 1 ? "note" : "notes"}
+              </span>
+            </div>
+            <ul className="activity-log">
+              {log.length === 0 && (
+                <li className="empty-log">
+                  <span className="empty-log-icon">
+                    <Leaf size={18} />
+                  </span>
+                  <div>
+                    <p>A peaceful little moment.</p>
+                    <span>Gerald’s commentary will appear here.</span>
+                  </div>
+                </li>
+              )}
               {log.map((entry, i) => (
                 <li key={i} className="flex gap-3">
                   <span className="w-16 shrink-0 text-xs uppercase tracking-widest text-muted-foreground">
@@ -814,6 +970,86 @@ function PlantApp() {
           </div>
         </section>
       </div>
+      <footer className="app-footer">
+        <span>
+          <Leaf size={14} /> Small habits. Happier humans.
+        </span>
+        <span>A desk companion with a flair for the dramatic.</span>
+      </footer>
+      <aside className="gerald-widget" aria-label="Gerald’s corner">
+        {geraldOpen && (
+          <section
+            className="gerald-widget-panel"
+            id="gerald-corner"
+            aria-labelledby="gerald-corner-title"
+          >
+            <div className="widget-header">
+              <div>
+                <p className="eyebrow">Your little desk companion</p>
+                <h2 id="gerald-corner-title">Gerald’s corner</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGeraldOpen(false)}
+                className="widget-close"
+                aria-label="Close Gerald’s corner"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="widget-message" aria-live="polite">
+              <p>
+                {bubble?.line ??
+                  "I’m here. Sit tall, take a sip, and carry on. I’ll handle the dramatic sighing."}
+              </p>
+            </div>
+            <p className="widget-status">
+              {moodLabel(state.mood)} · {state.drinkCount} water{" "}
+              {state.drinkCount === 1 ? "break" : "breaks"}
+            </p>
+            <div className="widget-controls">
+              <button type="button" onClick={() => void toggleVoice()}>
+                {voiceOn ? <VolumeX size={15} /> : <Volume2 size={15} />}
+                {voiceOn ? "Mute voice" : "Enable voice"}
+              </button>
+              {active && (
+                <button type="button" onClick={drankByHand}>
+                  <Droplets size={15} />I drank water
+                </button>
+              )}
+              {!active && showDemo && (
+                <button type="button" onClick={beginDemo}>
+                  <Play size={15} />
+                  Try demo
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+        <button
+          type="button"
+          className="gerald-launcher"
+          aria-label={geraldOpen ? "Close Gerald’s corner" : "Open Gerald’s corner"}
+          aria-expanded={geraldOpen}
+          aria-controls="gerald-corner"
+          onClick={() => setGeraldOpen((open) => !open)}
+        >
+          {geraldOpen ? (
+            <X size={23} />
+          ) : (
+            <div className="launcher-plant" aria-hidden="true">
+              <Plant
+                mood={state.mood}
+                leaf={leaf}
+                speaking={speaking}
+                pulse={pulse}
+                reaction={bubble?.kind}
+              />
+            </div>
+          )}
+          {!geraldOpen && <span className="launcher-status" aria-hidden="true" />}
+        </button>
+      </aside>
     </main>
   );
 }

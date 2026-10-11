@@ -11,7 +11,21 @@ const DELIVERIES = ["sigh", "scold", "gospel", "whisper"] as const;
 const LEAVES = ["wither", "perk", "droop"] as const;
 
 const lineSchema = z.object({
-  kind: z.enum(["slouch", "thirst", "screen", "away", "drink", "back", "fixed", "frown", "stare", "close", "nails", "yawn", "phone"]),
+  kind: z.enum([
+    "slouch",
+    "thirst",
+    "screen",
+    "away",
+    "drink",
+    "back",
+    "fixed",
+    "frown",
+    "stare",
+    "close",
+    "nails",
+    "yawn",
+    "phone",
+  ]),
   fixedOf: z.enum(["slouch", "frown", "stare", "close", "nails", "yawn", "phone"]).optional(),
   mood: z.number().min(0).max(100),
   slouchSeconds: z.number().min(0),
@@ -47,10 +61,14 @@ const CONTEXT: Record<z.infer<typeof lineSchema>["kind"], string> = {
   thirst: "The user has not had a drink for {dryMinutes} minutes. Whisper about your drying roots.",
   screen: "The user has been on screen for {screenMinutes} minutes. Scold them about their eyes.",
   away: "The user left. Whisper about abandonment and the dust settling on your leaves.",
-  drink: "The user just drank water after you told them to. Give a dry, deadpan backhanded compliment — praise that is really an insult (e.g. impressed they managed basic survival).",
-  fixed: "The user was slouching, you told them off, and they finally sat up straight. Confirm their posture is now correct, but as a dry backhanded compliment (e.g. astonished they remembered they have a spine).",
-  frown: "The user has been frowning or squinting at the screen for a while. Tell them to relax their face, deadpan (e.g. it's only a spreadsheet).",
-  stare: "The user has stared at the screen without blinking for ages. Remind them eyelids exist, dryly.",
+  drink:
+    "The user just drank water after you told them to. Give a dry, deadpan backhanded compliment — praise that is really an insult (e.g. impressed they managed basic survival).",
+  fixed:
+    "The user was slouching, you told them off, and they finally sat up straight. Confirm their posture is now correct, but as a dry backhanded compliment (e.g. astonished they remembered they have a spine).",
+  frown:
+    "The user has been frowning or squinting at the screen for a while. Tell them to relax their face, deadpan (e.g. it's only a spreadsheet).",
+  stare:
+    "The user has stared at the screen without blinking for ages. Remind them eyelids exist, dryly.",
   close: "The user is leaning way too close to the screen. Tell them to back up, sarcastically.",
   nails: "The user is biting their nails. Express incredulous disgust and tell them to stop.",
   yawn: "The user keeps yawning. Suggest sleep with theatrical pity.",
@@ -99,12 +117,16 @@ async function gatewayChat(body: unknown) {
 }
 
 const FIXED: Record<string, string> = {
-  frown: "The user finally stopped frowning and relaxed their face after you told them to. Confirm it with a backhanded compliment.",
-  stare: "The user finally blinked after you told them to. Confirm it with a backhanded compliment.",
-  close: "The user finally leaned back to a sane distance from the screen. Confirm it with a backhanded compliment.",
+  frown:
+    "The user finally stopped frowning and relaxed their face after you told them to. Confirm it with a backhanded compliment.",
+  stare:
+    "The user finally blinked after you told them to. Confirm it with a backhanded compliment.",
+  close:
+    "The user finally leaned back to a sane distance from the screen. Confirm it with a backhanded compliment.",
   nails: "The user finally stopped biting their nails. Confirm it with a backhanded compliment.",
   yawn: "The user stopped yawning. Confirm it with a backhanded compliment about looking marginally alive.",
-  phone: "The user put the phone down and looked back at the screen. Confirm it with a backhanded compliment.",
+  phone:
+    "The user put the phone down and looked back at the screen. Confirm it with a backhanded compliment.",
 };
 
 function fill(template: string, d: z.infer<typeof lineSchema>) {
@@ -290,36 +312,53 @@ function toBase64(buffer: ArrayBuffer) {
  */
 export const plantVoice = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => voiceSchema.parse(input))
-  .handler(async ({ data }): Promise<{ audio: string }> => {
-    const apiKey = process.env["ELEVENLABS_API_KEY"];
-    if (!apiKey) throw new Error("Voice is not connected to this project.");
+  .handler(
+    async ({
+      data,
+    }): Promise<{ audio: string; error?: never } | { error: string; audio?: never }> => {
+      const apiKey = process.env["ELEVENLABS_API_KEY"];
+      if (!apiKey?.trim())
+        return { error: "ElevenLabs voice is not configured for this local app." };
 
-    const voice = VOICES[data.delivery] ?? VOICES["sigh"]!;
-    const res = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voice.id}?output_format=mp3_44100_128`,
-      {
-        method: "POST",
-        headers: {
-          "xi-api-key": apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text: data.text,
-          model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            stability: Math.min(1, Math.max(0, voice.stability + (Math.random() - 0.5) * 0.1)),
-            similarity_boost: 0.75,
-            style: voice.style,
-            use_speaker_boost: true,
-            speed: voice.speed,
+      const voice = VOICES[data.delivery] ?? VOICES["sigh"]!;
+      const res = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voice.id}?output_format=mp3_44100_128`,
+        {
+          method: "POST",
+          headers: {
+            "xi-api-key": apiKey,
+            "Content-Type": "application/json",
           },
-        }),
-      },
-    );
+          body: JSON.stringify({
+            text: data.text,
+            model_id: "eleven_multilingual_v2",
+            voice_settings: {
+              stability: Math.min(1, Math.max(0, voice.stability + (Math.random() - 0.5) * 0.1)),
+              similarity_boost: 0.75,
+              style: voice.style,
+              use_speaker_boost: true,
+              speed: voice.speed,
+            },
+          }),
+        },
+      );
 
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      throw new Error(`Voice request failed (${res.status})${detail ? `: ${detail}` : ""}`);
-    }
-    return { audio: toBase64(await res.arrayBuffer()) };
-  });
+      if (!res.ok) {
+        const detail = (await res.json().catch(() => null)) as {
+          detail?: { status?: string };
+        } | null;
+        const status = detail?.detail?.status;
+        if (status === "missing_permissions") {
+          return { error: "The ElevenLabs key does not have permission to generate speech." };
+        }
+        if (status === "quota_exceeded") {
+          return { error: "The ElevenLabs speech quota has been reached." };
+        }
+        if (res.status === 401) {
+          return { error: "ElevenLabs could not authenticate the configured key." };
+        }
+        return { error: "ElevenLabs could not generate speech right now." };
+      }
+      return { audio: toBase64(await res.arrayBuffer()) };
+    },
+  );
