@@ -29,3 +29,4 @@
 - [x] Republish so the wider camera preview reaches https://sigh-cus.design — published with the new habits
 - [x] Six new habits (frown/squint, staring, leaning close, nail-biting, yawning, phone) with sarcastic "you fixed it" lines; faster timings (thirst 1 min, slouch/away/stare/close 10 s, frown/nails/yawn 5 s, phone 20 s)
 - [x] Publish the new habits to https://sigh-cus.design — publishing requested for the public site
+- [x] "Fine, I'll Speak" voice button — Gerald types until you press it, then speaks his lines with ElevenLabs and the button becomes "That's Enough, Gerald"; verified audio plays when on, no voice calls when off, and it is live on sigh-cus.design
