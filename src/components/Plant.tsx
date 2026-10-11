@@ -16,18 +16,22 @@ const ATTACH = [
 
 const LEAF_PATH = "M0 0 C 20 -16, 44 -13, 58 1 C 44 15, 20 17, 0 0 Z";
 
+export type PlantExpression = "squint" | "eye-roll" | "pressed-lips" | "head-shake" | "smug" | "unimpressed" | "watchful";
+
 export function Plant({
   mood,
   leaf,
   speaking,
   pulse,
   reaction,
+  previewExpression,
 }: {
   mood: number;
   leaf: Leaf;
   speaking: boolean;
   pulse: number;
   reaction?: EventKind | undefined;
+  previewExpression?: PlantExpression | undefined;
 }) {
   const eyeClip = useId().replace(/:/g, "");
   const [reacting, setReacting] = useState(false);
@@ -37,9 +41,13 @@ export function Plant({
     const timeout = setTimeout(() => setReacting(false), 4200);
     return () => clearTimeout(timeout);
   }, [pulse]);
-  const pleased = reacting && (reaction === "drink" || reaction === "back");
-  const annoyed = reacting && !pleased;
-  const expression = pleased ? "smug" : annoyed ? "annoyed" : mood < 45 ? "unimpressed" : "watchful";
+  const pleased = previewExpression ? previewExpression === "smug" : reacting && (reaction === "drink" || reaction === "back");
+  const annoyed = previewExpression ? ["squint", "eye-roll", "pressed-lips", "head-shake"].includes(previewExpression) : reacting && !pleased;
+  const expression = previewExpression ?? (pleased ? "smug" : annoyed ? "annoyed" : mood < 45 ? "unimpressed" : "watchful");
+  const shake = previewExpression ? previewExpression === "head-shake" : annoyed;
+  const roll = previewExpression ? previewExpression === "eye-roll" : annoyed;
+  const press = previewExpression ? previewExpression === "pressed-lips" : annoyed;
+  const squint = previewExpression ? previewExpression === "squint" : reacting;
   const health = Math.max(0, Math.min(1, mood / 100));
   // Perky when healthy, flat on the desk when dying.
   const droop = -26 + (1 - health) * 62 + (leaf === "wither" ? 10 : 0) - (leaf === "perk" ? 12 : 0);
@@ -69,7 +77,7 @@ export function Plant({
         </clipPath>
       </defs>
       <g className="plant-breathe">
-      <g key={`reaction-${pulse}`} className={annoyed ? "plant-head-shake" : pleased ? "plant-smug-nod" : undefined}>
+      <g key={`reaction-${pulse}-${previewExpression}`} className={shake ? "plant-head-shake" : pleased ? "plant-smug-nod" : undefined}>
       <g
         key={pulse}
         style={{ transformOrigin: "120px 210px", transition: "transform 1.4s ease-in-out" }}
@@ -168,11 +176,11 @@ export function Plant({
         <g className="plant-blink">
           <g clipPath={`url(#${eyeClip})`}>
             <rect x="94" y="218" width="52" height="18" fill="var(--color-plant-eye)" />
-            <g className={annoyed ? "plant-eye-roll" : pleased ? "plant-side-eye" : "plant-idle-glance"}>
+            <g className={roll ? "plant-eye-roll" : pleased ? "plant-side-eye" : "plant-idle-glance"}>
               <ellipse cx="103" cy="227" rx="3.2" ry="4" fill="var(--color-pot-face)" />
               <ellipse cx="137" cy="227" rx="3.2" ry="4" fill="var(--color-pot-face)" />
             </g>
-            <path d="M94 218 H146 V223 H94 Z" fill="var(--color-pot)" className={reacting ? "plant-squint" : "plant-lids"} />
+            <path d="M94 218 H146 V223 H94 Z" fill="var(--color-pot)" className={squint ? "plant-squint" : "plant-lids"} />
           </g>
         </g>
 
@@ -193,7 +201,7 @@ export function Plant({
             stroke="var(--color-pot-face)"
             strokeWidth={annoyed ? "2" : "3"}
             strokeLinecap="round"
-            className={annoyed ? "plant-lip-press" : undefined}
+            className={press ? "plant-lip-press" : undefined}
             style={{ transition: "d 0.6s ease-in-out" }}
           />
         )}
