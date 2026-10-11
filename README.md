@@ -34,7 +34,7 @@ A slouch needs two signals agreeing, or one extreme reading, so a glance at a co
 
 ## Voice
 
-Gerald is **text-only** right now — `const TEXT_ONLY = true` at the top of `src/routes/index.tsx`. Set it to `false` and lines are spoken with ElevenLabs when a key is configured; otherwise the browser's own voice reads them.
+Gerald keeps typing until you press **"Fine, I'll Speak"** under the pot. Then he talks out loud with ElevenLabs, and the button turns into **"That's Enough, Gerald"** to send him back to typing. Nothing is spoken until you press it — and if the spoken voice can't be reached, the browser's own voice reads the line instead.
 
 ## The rules it lives by
 

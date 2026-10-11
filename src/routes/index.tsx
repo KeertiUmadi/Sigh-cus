@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plant } from "@/components/Plant";
 import { Button } from "@/components/ui/button";
-import { PictureInPicture2 } from "lucide-react";
+import { PictureInPicture2, Volume2, VolumeX } from "lucide-react";
 import { createPortal } from "react-dom";
 import { StreakChart } from "@/components/StreakChart";
 import { playFanfare } from "@/lib/fanfare";
@@ -22,7 +22,8 @@ import {
 import { checkDrinkVessel, judgePosture, plantLine, plantVoice } from "@/lib/plant.functions";
 import { useFaceSensor } from "@/lib/use-face-sensor";
 
-const TEXT_ONLY = true;
+/** Gerald keeps his mouth shut until you tell him otherwise. */
+const VOICE_ON_BY_DEFAULT = false;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -93,6 +94,9 @@ function PlantApp() {
   const [judging, setJudging] = useState<string | null>(null);
   const [log, setLog] = useState<{ at: number; kind: string; line: string }[]>([]);
   const [demoSpeed, setDemoSpeed] = useState(1);
+  const [voiceOn, setVoiceOn] = useState(VOICE_ON_BY_DEFAULT);
+  const voiceRef = useRef(VOICE_ON_BY_DEFAULT);
+  voiceRef.current = voiceOn;
 
   const readingRef = useRef<Reading | null>(null);
   const demoRef = useRef<Reading>({ ...SYNTH_BASELINE, at: Date.now(), faceVisible: true });
@@ -207,8 +211,8 @@ function PlantApp() {
   }, [stop]);
 
   const speak = useCallback(async (text: string, delivery: string) => {
-    // Text-only while the user validates responses: no ElevenLabs, no browser voice.
-    if (TEXT_ONLY) {
+    // Gerald stays silent until "Fine, I'll Speak" is pressed.
+    if (!voiceRef.current) {
       setSpeaking(false);
       return;
     }
@@ -256,6 +260,22 @@ function PlantApp() {
     audioRef.current?.pause();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     setSpeaking(false);
+  }
+
+  /** The button: lets Gerald speak out loud, or puts him back in his pot. */
+  async function toggleVoice() {
+    const next = !voiceRef.current;
+    voiceRef.current = next;
+    setVoiceOn(next);
+    if (!next) {
+      audioRef.current?.pause();
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      setSpeaking(false);
+      setVoiceNote("Gerald is back to typing.");
+      return;
+    }
+    setVoiceNote(null);
+    await speak("Fine. You asked for this.", "sigh");
   }
 
   const react = useCallback(
@@ -543,10 +563,14 @@ function PlantApp() {
           <div className="mx-auto h-72 w-full max-w-xs">
             <Plant mood={state.mood} leaf={leaf} speaking={speaking} pulse={pulse} reaction={bubble?.kind} />
           </div>
-          <div className="mt-2 flex justify-center">
+          <div className="mt-2 flex flex-wrap justify-center gap-2">
             <Button variant="outline" size="sm" onClick={() => (pipWin ? pipWin.close() : void openFloat())}>
               <PictureInPicture2 className="mr-2 h-4 w-4" />
               {pipWin ? "Bring Gerald back in" : "Float Gerald over other windows"}
+            </Button>
+            <Button variant={voiceOn ? "default" : "outline"} size="sm" onClick={() => void toggleVoice()}>
+              {voiceOn ? <VolumeX className="mr-2 h-4 w-4" /> : <Volume2 className="mr-2 h-4 w-4" />}
+              {voiceOn ? "That's Enough, Gerald" : "Fine, I'll Speak"}
             </Button>
           </div>
           {pipWin &&
