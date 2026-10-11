@@ -352,21 +352,6 @@ function PlantApp() {
         busy.current = false;
         await speak(out.line, out.delivery);
       } catch (e) {
-        if (ev.kind === "fixed") {
-          const pool = ev.of && ev.of !== "slouch" ? [
-            "Oh, you stopped. Truly, a hero walks among us.",
-            "Fixed it. Only took being shamed by a fern.",
-            "Better. Not good, but better. Baby steps.",
-          ] : [
-            "Oh, a straight spine. Look at you, doing the bare minimum.",
-            "Posture corrected. I'd clap, but I'm a plant.",
-            "There it is. Was that so hard? Apparently, yes.",
-            "Sitting up. Truly, you contain multitudes.",
-          ];
-          const line = pool[Math.floor(Math.random() * pool.length)] ?? pool[0]!;
-          setBubble({ line, delivery: "whisper", leaf: "perk", kind: "fixed" });
-          setLog((l) => [{ at: ev.at, kind: ev.kind, line }, ...l].slice(0, 12));
-        }
         if (ev.kind === "drink") {
           const pool = [
             "Wow. Hydrated. Truly, a historic achievement for someone of your caliber.",
