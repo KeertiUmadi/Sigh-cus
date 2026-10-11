@@ -14,11 +14,11 @@
 - [ ] Tiger Data streak history — blocked: needs Lovable Cloud enabled
 - [x] Custom domain for the app — done with sigh-cus.design; fernforgivemenot.live was not bought and is not needed
 - [x] Code is on GitHub at github.com/KeertiUmadi/Sigh-cus — 86 project files plus a README, pushed through the linked GitHub connection
-- [ ] Copy the code into the team repo github.com/ShubhangiPurohit-dev/Sigh-cus — blocked: KeertiUmadi has no write access there; needs Shubhangi to add KeertiUmadi as a collaborator with Write, then re-run /tmp/browser/push-gh/gh_push.py
+- [x] Copy the code into the team repo github.com/ShubhangiPurohit-dev/Sigh-cus — dropped: not needed, Keerti's repo already carries the current published code (pushed 05:11 UTC today)
 - [x] Hand the user a zip of the project files — saved as guilt-trip-plant.zip in Files
 - [x] Publish the app so anyone with a link can open it — live at https://sigh-cus.design (public visibility)
 - [x] Rename the app to Sigh-cus everywhere — page title, heading, tracks page, README, and the address itself
-- [ ] Re-push the renamed README to github.com/KeertiUmadi/Sigh-cus — the copy on GitHub still carries the old name
+- [ ] Refresh the README on GitHub — the name is already correct there, but its rules table still lists old timings (2-minute slouch, 45-minute thirst, 20-second away) and 14 tests, while the app now uses 10-second slouch, 1-minute thirst, the six new habits and 20 tests
 
 - [x] Snooze: pause Gerald's comments for a while (keep counting)
 - [x] Fix sip detection (chin-up sign was inverted) + manual "I just drank water" button
