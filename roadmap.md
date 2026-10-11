@@ -18,7 +18,7 @@
 - [x] Hand the user a zip of the project files — saved as guilt-trip-plant.zip in Files
 - [x] Publish the app so anyone with a link can open it — live at https://sigh-cus.design (public visibility)
 - [x] Rename the app to Sigh-cus everywhere — page title, heading, tracks page, README, and the address itself
-- [ ] Re-push the renamed README to github.com/KeertiUmadi/Sigh-cus — the copy on GitHub still carries the old name
+- [ ] Refresh the README on GitHub — the name is already correct there, but its rules table still lists old timings (2-minute slouch, 45-minute thirst, 20-second away) and 14 tests, while the app now uses 10-second slouch, 1-minute thirst, the six new habits and 20 tests
 
 - [x] Snooze: pause Gerald's comments for a while (keep counting)
 - [x] Fix sip detection (chin-up sign was inverted) + manual "I just drank water" button
