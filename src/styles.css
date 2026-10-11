@@ -51,6 +51,7 @@
   --color-plant-leaf: var(--plant-leaf);
   --color-plant-leaf-vein: var(--plant-leaf-vein);
   --color-plant-stem: var(--plant-stem);
+  --color-plant-withered: var(--plant-withered);
   --color-pot: var(--pot);
   --color-pot-rim: var(--pot-rim);
   --color-soil: var(--soil);
@@ -83,6 +84,7 @@
   --plant-leaf: oklch(0.72 0.16 145);
   --plant-leaf-vein: oklch(0.55 0.12 145);
   --plant-stem: oklch(0.6 0.13 140);
+  --plant-withered: oklch(0.45 0.07 70);
   --pot: oklch(0.45 0.11 45);
   --pot-rim: oklch(0.53 0.11 45);
   --soil: oklch(0.3 0.05 60);
@@ -149,6 +151,7 @@
   --plant-leaf: oklch(0.76 0.17 145);
   --plant-leaf-vein: oklch(0.58 0.13 145);
   --plant-stem: oklch(0.64 0.14 140);
+  --plant-withered: oklch(0.48 0.08 70);
   --pot: oklch(0.5 0.12 45);
   --pot-rim: oklch(0.58 0.12 45);
   --soil: oklch(0.34 0.06 60);
@@ -191,6 +194,19 @@ body { font-family: var(--font-sans); }
   animation: plant-talk 0.35s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
+}
+
+/* a leaf has given up: it detaches and drops to the desk */
+@keyframes plant-fall {
+  0% { opacity: 0.9; transform: translate(0, 0) rotate(0deg); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--fall-x, 26px), 132px) rotate(var(--fall-rot, 220deg)); }
+}
+.plant-fall {
+  animation: plant-fall 3.6s cubic-bezier(0.5, 0, 0.8, 0.9) forwards;
+  transform-box: fill-box;
+  transform-origin: 0 0;
+  animation-delay: var(--fall-delay, 0s);
 }
 
 /* the speech bubble arrives with a little bounce */

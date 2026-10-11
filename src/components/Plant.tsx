@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Leaf } from "@/lib/plant-core";
 
 /**
@@ -32,6 +33,13 @@ export function Plant({
   const stemLean = (1 - health) * 14;
   const eyeOpen = 0.35 + health * 0.65;
   const mouthCurve = speaking ? 1 : health * 0.8 - 0.4;
+  // Leaves brown out as mood drops, then start dropping off entirely.
+  const witherMix = Math.round(Math.min(1, Math.max(0, (0.6 - health) / 0.45)) * 85);
+  const leafColor = `color-mix(in srgb, var(--color-plant-leaf) ${100 - witherMix}%, var(--color-plant-withered))`;
+  const stemColor = `color-mix(in srgb, var(--color-plant-stem) ${100 - witherMix}%, var(--color-plant-withered))`;
+  // Shed order: topmost (smallest) leaves give up first.
+  const attachedCount =
+    health > 0.55 ? 5 : health > 0.35 ? 4 : health > 0.18 ? 3 : health > 0.05 ? 2 : 0;
 
   return (
     <svg
@@ -48,7 +56,7 @@ export function Plant({
         <path
           d={`M120 208 C ${118 - stemLean} 170, ${122 + stemLean} 130, ${120 + stemLean} 78`}
           fill="none"
-          stroke="var(--color-plant-stem)"
+          stroke={stemColor}
           strokeWidth="6"
           strokeLinecap="round"
           style={{ transition: "d 1.4s ease-in-out" }}
@@ -56,30 +64,56 @@ export function Plant({
 
         {ATTACH.map((l, i) => {
           const angle = droop * l.side * (i % 2 === 0 ? 1 : 0.88) + l.side * -6;
+          const attached = i < attachedCount;
+          const fallen = !attached;
           return (
             <g key={i} transform={`translate(${120 + l.side * 2},${l.y})`}>
-              <g
-                style={{
-                  transform: `rotate(${angle * l.side}deg) scale(${l.side * l.size}, ${l.size})`,
-                  transformOrigin: "0px 0px",
-                  transition: "transform 1.4s ease-in-out",
-                }}
-              >
-                <path
-                  d={LEAF_PATH}
-                  fill="var(--color-plant-leaf)"
-                  stroke="var(--color-plant-leaf-vein)"
-                  strokeWidth="1.5"
-                  opacity={0.55 + health * 0.45}
-                />
-                <path
-                  d="M2 0 C 20 -4, 40 -3, 55 1"
-                  fill="none"
-                  stroke="var(--color-plant-leaf-vein)"
-                  strokeWidth="1.5"
-                  opacity="0.7"
-                />
-              </g>
+              {attached && (
+                <g
+                  style={{
+                    transform: `rotate(${angle * l.side}deg) scale(${l.side * l.size}, ${l.size})`,
+                    transformOrigin: "0px 0px",
+                    transition: "transform 1.4s ease-in-out",
+                  }}
+                >
+                  <path
+                    d={LEAF_PATH}
+                    fill={leafColor}
+                    stroke="var(--color-plant-leaf-vein)"
+                    strokeWidth="1.5"
+                    opacity={0.55 + health * 0.45}
+                  />
+                  <path
+                    d="M2 0 C 20 -4, 40 -3, 55 1"
+                    fill="none"
+                    stroke="var(--color-plant-leaf-vein)"
+                    strokeWidth="1.5"
+                    opacity="0.7"
+                  />
+                </g>
+              )}
+              {fallen && (
+                <g
+                  key={pulse}
+                  className="plant-fall"
+                  style={
+                    {
+                      transformOrigin: "0px 0px",
+                      "--fall-x": `${l.side * 30}px`,
+                      "--fall-rot": `${l.side * 240}deg`,
+                      "--fall-delay": `${(i - attachedCount) * 0.45}s`,
+                    } as CSSProperties
+                  }
+                >
+                  <path
+                    d={LEAF_PATH}
+                    fill="var(--color-plant-withered)"
+                    stroke="var(--color-plant-withered)"
+                    strokeWidth="1.5"
+                    transform={`scale(${l.side * l.size}, ${l.size})`}
+                  />
+                </g>
+              )}
             </g>
           );
         })}
