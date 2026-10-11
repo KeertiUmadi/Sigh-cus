@@ -9,7 +9,7 @@ Live at https://sigh-cus.design (https://www.sigh-cus.design forwards there).
 ## What it does
 
 - **Watches you through your webcam.** MediaPipe FaceLandmarker runs in the browser and measures the geometry of your face frame by frame. A Gemini call turns what it sees into a verdict and a fresh guilt line. Only a small, downscaled snapshot is sent for a verdict — never a video stream.
-- **Confirms when you fix it.** Sit up straight for 3 seconds after a slouch nag and Gerald admits it, backhanded: *"Oh, a straight spine, look at you doing the bare minimum."*
+- **Confirms when you fix it.** Sit up straight after a slouch nag and Gerald admits it, backhanded: *"Oh, a straight spine, look at you doing the bare minimum."*
 - **Notices water.** Tip your chin up with a bottle or cup for a moment and Gerald celebrates like you've just saved the rainforest. Gemini double-checks the frame for a cup or bottle before counting it, and there's an **"I just drank water"** button for when the camera misses a sip.
 - **Keeps score.** A mood trail runs across the session with a marker on every sip and every slouch.
 - **Follows you out of the tab.** "Float Gerald over other windows" pops the plant into a small always-on-top window (Document Picture-in-Picture) so he keeps reacting while you work somewhere else. Desktop Chrome and Edge.
@@ -19,16 +19,16 @@ Live at https://sigh-cus.design (https://www.sigh-cus.design forwards there).
 
 | Habit | Nagged after | Confirmed fixed when |
 | --- | --- | --- |
-| Slouching (head dropped, sunk in frame, or leaned in) | 10 seconds | sitting up straight for 3 seconds |
+| Slouching (head dropped, sunk in frame, or leaned in) | 5 seconds | sitting up straight instantly |
 | Thirst (no sip) | 1 minute | a sip |
-| Staring without blinking | 10 seconds | a blink |
-| Leaning too close to the screen | 10 seconds | leaning back for 2 seconds |
-| Frowning or squinting | 5 seconds | relaxing the face for 2 seconds |
-| Finger at the mouth (nail-biting) | 5 seconds | hand away for 2 seconds |
-| Yawning | 5 seconds | jaw closed for 2 seconds |
-| Looking down at a phone | 20 seconds | looking back up for 2 seconds |
+| Staring without blinking | 5 seconds | a blink |
+| Leaning too close to the screen | 5 seconds | leaning back instantly |
+| Frowning or squinting | 5 seconds | relaxing the face instantly |
+| Finger at the mouth (nail-biting) | 5 seconds | hand away instantly |
+| Yawning | 5 seconds | jaw closed instantly |
+| Looking down at a phone | 5 seconds | looking back up instantly |
 | Screen time | 60 minutes | only a break resets it |
-| Walking away (no face in frame) | 10 seconds | coming back |
+| Walking away (no face in frame) | 5 seconds | coming back |
 
 A slouch needs two signals agreeing, or one extreme reading, so a glance at a colleague doesn't set it off. The same habit nags again every 45 seconds while it keeps going.
 
@@ -40,15 +40,15 @@ Gerald keeps typing until you press **"Fine, I'll Speak"** under the pot. Then h
 
 | Rule | Value |
 | --- | --- |
-| First slouch nag | after 10 seconds |
+| First slouch nag | after 5 seconds |
 | Repeat nag | every 45 seconds while you keep at it |
 | Thirst nag | after 1 minute without a sip |
 | Screen-time nag | after 60 minutes |
-| "You left" detection | after 10 seconds with no face in frame |
-| A sip looks like | chin tipped up, held 1.2 seconds |
+| "You left" detection | after 5 seconds with no face in frame |
+| A sip looks like | chin tipped up, held under a second (a hand or cup at the mouth helps) |
 | One sip counts as one | 20-second cooldown |
-| Sitting up confirms | 3 seconds upright |
-| Stopping a habit confirms | 2 seconds (a blink ends a stare at once) |
+| Sitting up confirms | instantly |
+| Stopping a habit confirms | instantly |
 
 ## Run it
 

@@ -38,7 +38,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Slouch for two minutes and your desk plant audibly despairs. Drink water and it throws a gospel choir.",
+          "Slouch for five seconds and your desk plant audibly despairs. Drink water and it throws a gospel choir.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -281,7 +281,10 @@ function PlantApp() {
   const react = useCallback(
     async (events: PlantEvent[]) => {
       if (!events.length) return;
-      const ev = events.find((x) => x.kind === "drink") ?? events[events.length - 1];
+      const ev =
+        events.find((x) => x.kind === "drink") ??
+        events.find((x) => x.kind === "fixed") ??
+        events[events.length - 1];
       if (!ev) return;
       // quiet time: keep counting, say nothing
       if (quietRef.current && Date.now() < quietRef.current) {
@@ -290,6 +293,32 @@ function PlantApp() {
           setPulse((p) => p + 1);
           setBubble({ line: "Sip counted.", delivery: "whisper", leaf: "perk", kind: "drink" });
         }
+        return;
+      }
+      // a corrected habit gets its backhanded compliment instantly, no waiting on AI
+      if (ev.kind === "fixed") {
+        const pool = ev.of && ev.of !== "slouch" ? [
+          "Oh, you stopped. Truly, a hero walks among us.",
+          "Fixed it. Only took being shamed by a fern.",
+          "Better. Not good, but better. Baby steps.",
+          "Wow, self-control. I'll mark the calendar.",
+          "Look at that, you can be taught. Slowly.",
+        ] : [
+          "Oh, a straight spine. Look at you, doing the bare minimum.",
+          "Posture corrected. I'd clap, but I'm a plant.",
+          "There it is. Was that so hard? Apparently, yes.",
+          "Sitting up. Truly, you contain multitudes.",
+          "Vertical again. Evolution thanks you.",
+        ];
+        const fresh = pool.filter((l) => !recentLines.current.includes(l));
+        const pick = fresh.length ? fresh : pool;
+        const line = pick[Math.floor(Math.random() * pick.length)] ?? pool[0]!;
+        recentLines.current = [line, ...recentLines.current].slice(0, 12);
+        setLeaf("perk");
+        setPulse((p) => p + 1);
+        setBubble({ line, delivery: "whisper", leaf: "perk", kind: "fixed" });
+        setLog((l) => [{ at: ev.at, kind: ev.kind, line }, ...l].slice(0, 12));
+        void speak(line, "whisper");
         return;
       }
       // a drink always gets its comment, even if another line is mid-flight
@@ -323,21 +352,6 @@ function PlantApp() {
         busy.current = false;
         await speak(out.line, out.delivery);
       } catch (e) {
-        if (ev.kind === "fixed") {
-          const pool = ev.of && ev.of !== "slouch" ? [
-            "Oh, you stopped. Truly, a hero walks among us.",
-            "Fixed it. Only took being shamed by a fern.",
-            "Better. Not good, but better. Baby steps.",
-          ] : [
-            "Oh, a straight spine. Look at you, doing the bare minimum.",
-            "Posture corrected. I'd clap, but I'm a plant.",
-            "There it is. Was that so hard? Apparently, yes.",
-            "Sitting up. Truly, you contain multitudes.",
-          ];
-          const line = pool[Math.floor(Math.random() * pool.length)] ?? pool[0]!;
-          setBubble({ line, delivery: "whisper", leaf: "perk", kind: "fixed" });
-          setLog((l) => [{ at: ev.at, kind: ev.kind, line }, ...l].slice(0, 12));
-        }
         if (ev.kind === "drink") {
           const pool = [
             "Wow. Hydrated. Truly, a historic achievement for someone of your caliber.",
@@ -388,7 +402,8 @@ function PlantApp() {
           .then((v) => v.holdingDrink)
           .catch(() => true) // if the check fails, trust the head tilt
           .then((ok) => {
-            if (ok) {
+            // a hand at the mouth with a tilt is a sip even if the cup is out of frame
+            if (ok || readingRef.current?.handAtMouth) {
               void react(out.events.filter((e) => e.kind === "drink"));
               return;
             }
